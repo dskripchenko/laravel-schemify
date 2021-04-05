@@ -2,32 +2,26 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
-
-use Dskripchenko\Schemify\Console\Components\PathByTarget;
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\PathByLayer;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Input\InputOption;
+use \Illuminate\Database\Console\Migrations\InstallCommand as BaseInstallCommand;
 
-class InstallCommand extends \Illuminate\Database\Console\Migrations\InstallCommand
+/**
+ * Class InstallCommand
+ * @package Dskripchenko\Schemify\Console\Migrations
+ */
+class InstallCommand extends BaseInstallCommand
 {
-    use PathByTarget, RunByTarget;
+    use PathByLayer, RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    null,
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
 
@@ -36,17 +30,15 @@ class InstallCommand extends \Illuminate\Database\Console\Migrations\InstallComm
      */
     public function handle()
     {
-        $this->runByTarget(
-            function (&$instance, $database) {
-                $connection = DB::connection($database);
-                $resolver = new ConnectionResolver([$database => $connection]);
-                $repository = new DatabaseMigrationRepository($resolver, config('database.migrations'));
-                $repository->setSource($database);
-                if (!$repository->repositoryExists()) {
-                    $repository->createRepository();
-                    $instance->info('Migration table created successfully.');
-                }
+        $this->runByLayer(function (&$instance, $database){
+            $connection = DB::connection($database);
+            $resolver = new ConnectionResolver([$database => $connection]);
+            $repository = new DatabaseMigrationRepository($resolver, config('database.migrations'));
+            $repository->setSource($database);
+            if (! $repository->repositoryExists()){
+                $repository->createRepository();
+                $instance->info('Migration table created successfully.');
             }
-        );
+        });
     }
 }

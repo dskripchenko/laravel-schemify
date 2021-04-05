@@ -1,30 +1,23 @@
 <?php
 
-
 namespace Dskripchenko\Schemify\Console\Database;
 
-
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Database\Console\WipeCommand as BaseWipeCommand;
 
-class WipeCommand extends \Illuminate\Database\Console\WipeCommand
+/**
+ * Class WipeCommand
+ * @package Dskripchenko\Schemify\Console\Database
+ */
+class WipeCommand extends BaseWipeCommand
 {
-    use RunByTarget;
+    use RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    't',
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
     /**
@@ -32,28 +25,26 @@ class WipeCommand extends \Illuminate\Database\Console\WipeCommand
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
-        $this->runByTarget(
-            function (&$instance, $database) {
-                if ($instance->option('drop-views')) {
-                    $instance->dropAllViews($database);
+        $this->runByLayer(function (&$instance, $database){
+            if ($instance->option('drop-views')) {
+                $instance->dropAllViews($database);
 
-                    $instance->info('Dropped all views successfully.');
-                }
-
-                $instance->dropAllTables($database);
-
-                $instance->info('Dropped all tables successfully.');
-
-                if ($instance->option('drop-types')) {
-                    $instance->dropAllTypes($database);
-
-                    $instance->info('Dropped all types successfully.');
-                }
+                $instance->info('Dropped all views successfully.');
             }
-        );
+
+            $instance->dropAllTables($database);
+
+            $instance->info('Dropped all tables successfully.');
+
+            if ($instance->option('drop-types')) {
+                $instance->dropAllTypes($database);
+
+                $instance->info('Dropped all types successfully.');
+            }
+        });
     }
 }

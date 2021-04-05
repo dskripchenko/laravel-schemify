@@ -1,12 +1,14 @@
 <?php
 
-
 namespace Dskripchenko\Schemify\Providers;
-
 
 use Dskripchenko\Schemify\Console\Database\SeedCommand;
 use Dskripchenko\Schemify\Console\Database\WipeCommand;
 
+/**
+ * Class ArtisanServiceProvider
+ * @package Dskripchenko\Schemify\Providers
+ */
 class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanServiceProvider
 {
     /**
@@ -16,12 +18,9 @@ class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanSer
      */
     protected function registerDbWipeCommand()
     {
-        $this->app->singleton(
-            'command.db.wipe',
-            function () {
-                return new WipeCommand; //use custom App\Console\Database\WipeCommand
-            }
-        );
+        $this->app->singleton('command.db.wipe', function () {
+            return new WipeCommand; //use custom App\Console\Database\WipeCommand
+        });
     }
 
     /**
@@ -31,12 +30,9 @@ class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanSer
      */
     protected function registerSeedCommand()
     {
-        $this->app->singleton(
-            'command.seed',
-            function ($app) {
-                return new SeedCommand($app['db']);
-            }
-        );
+        $this->app->singleton('command.seed', function ($app) {
+            return new SeedCommand($app['db']);
+        });
     }
 
     public function register()

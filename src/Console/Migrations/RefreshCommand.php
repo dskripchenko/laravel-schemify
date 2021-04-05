@@ -2,29 +2,23 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
-
-use Dskripchenko\Schemify\Console\Components\PathByTarget;
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\PathByLayer;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Symfony\Component\Console\Input\InputOption;
+use \Illuminate\Database\Console\Migrations\RefreshCommand as BaseRefreshCommand;
 
-class RefreshCommand extends \Illuminate\Database\Console\Migrations\RefreshCommand
+/**
+ * Class RefreshCommand
+ * @package Dskripchenko\Schemify\Console\Migrations
+ */
+class RefreshCommand extends BaseRefreshCommand
 {
-    use PathByTarget, RunByTarget;
+    use PathByLayer, RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    null,
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
     /**
@@ -34,7 +28,7 @@ class RefreshCommand extends \Illuminate\Database\Console\Migrations\RefreshComm
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
@@ -59,18 +53,13 @@ class RefreshCommand extends \Illuminate\Database\Console\Migrations\RefreshComm
         // The refresh command is essentially just a brief aggregate of a few other of
         // the migration commands and just provides a convenient wrapper to execute
         // them in succession. We'll also see if we need to re-seed the database.
-        $this->call(
-            'migrate',
-            array_filter(
-                [
-                    '--database' => $database,
-                    '--path' => $path,
-                    '--realpath' => $this->input->getOption('realpath'),
-                    '--force' => true,
-                    '--target' => $this->option('target'),
-                ]
-            )
-        );
+        $this->call('migrate', array_filter([
+            '--database' => $database,
+            '--path' => $path,
+            '--realpath' => $this->input->getOption('realpath'),
+            '--force' => true,
+            '--layer' => $this->option('layer'),
+        ]));
 
         if ($this->needsSeeding()) {
             $this->runSeeder($database);
@@ -80,49 +69,39 @@ class RefreshCommand extends \Illuminate\Database\Console\Migrations\RefreshComm
     /**
      * Run the rollback command.
      *
-     * @param string $database
-     * @param string $path
-     * @param int $step
+     * @param  string  $database
+     * @param  string  $path
+     * @param  int  $step
      * @return void
      */
     protected function runRollback($database, $path, $step)
     {
-        $this->call(
-            'migrate:rollback',
-            array_filter(
-                [
-                    '--database' => $database,
-                    '--path' => $path,
-                    '--realpath' => $this->input->getOption('realpath'),
-                    '--step' => $step,
-                    '--force' => true,
-                    '--target' => $this->option('target'),
-                ]
-            )
-        );
+        $this->call('migrate:rollback', array_filter([
+            '--database' => $database,
+            '--path' => $path,
+            '--realpath' => $this->input->getOption('realpath'),
+            '--step' => $step,
+            '--force' => true,
+            '--layer' => $this->option('layer'),
+        ]));
     }
 
     /**
      * Run the reset command.
      *
-     * @param string $database
-     * @param string $path
+     * @param  string  $database
+     * @param  string  $path
      * @return void
      */
     protected function runReset($database, $path)
     {
-        $this->call(
-            'migrate:reset',
-            array_filter(
-                [
-                    '--database' => $database,
-                    '--path' => $path,
-                    '--realpath' => $this->input->getOption('realpath'),
-                    '--force' => true,
-                    '--target' => $this->option('target'),
-                ]
-            )
-        );
+        $this->call('migrate:reset', array_filter([
+            '--database' => $database,
+            '--path' => $path,
+            '--realpath' => $this->input->getOption('realpath'),
+            '--force' => true,
+            '--layer' => $this->option('layer'),
+        ]));
     }
 
     /**
@@ -138,21 +117,16 @@ class RefreshCommand extends \Illuminate\Database\Console\Migrations\RefreshComm
     /**
      * Run the database seeder command.
      *
-     * @param string $database
+     * @param  string  $database
      * @return void
      */
     protected function runSeeder($database)
     {
-        $this->call(
-            'db:seed',
-            array_filter(
-                [
-                    '--database' => $database,
-                    '--class' => $this->option('seeder') ?: 'DatabaseSeeder',
-                    '--force' => true,
-                    '--target' => $this->option('target'),
-                ]
-            )
-        );
+        $this->call('db:seed', array_filter([
+            '--database' => $database,
+            '--class' => $this->option('seeder') ?: 'DatabaseSeeder',
+            '--force' => true,
+            '--layer' => $this->option('layer'),
+        ]));
     }
 }

@@ -2,12 +2,17 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
-use Dskripchenko\Schemify\Console\Components\PathByTarget;
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\PathByLayer;
+use Dskripchenko\Schemify\Traits\RunByLayer;
+use \Illuminate\Database\Console\Migrations\MigrateMakeCommand as BaseMigrateMakeCommand;
 
-class MigrateMakeCommand extends \Illuminate\Database\Console\Migrations\MigrateMakeCommand
+/**
+ * Class MigrateMakeCommand
+ * @package Dskripchenko\Schemify\Console\Migrations
+ */
+class MigrateMakeCommand extends BaseMigrateMakeCommand
 {
-    use PathByTarget, RunByTarget;
+    use PathByLayer, RunByLayer;
 
     /**
      * The console command signature.
@@ -20,5 +25,5 @@ class MigrateMakeCommand extends \Illuminate\Database\Console\Migrations\Migrate
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
         {--fullpath : Output the full path of the migration}
-        {--target=main : The purpose of the command. Available values are main schema, client schemas. (main|schemify)}';
+        {--layer=main : Слой к которому применяется команда.}';
 }

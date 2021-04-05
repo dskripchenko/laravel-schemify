@@ -1,31 +1,24 @@
 <?php
 
-
 namespace Dskripchenko\Schemify\Console\Database;
 
-
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Database\Console\Seeds\SeedCommand as BaseSeedCommand;
 
-class SeedCommand extends \Illuminate\Database\Console\Seeds\SeedCommand
+/**
+ * Class SeedCommand
+ * @package Dskripchenko\Schemify\Console\Database
+ */
+class SeedCommand extends BaseSeedCommand
 {
-    use RunByTarget;
+    use RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    't',
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
     /**
@@ -33,22 +26,18 @@ class SeedCommand extends \Illuminate\Database\Console\Seeds\SeedCommand
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
-        $this->runByTarget(
-            function (&$instance, $database) {
-                $instance->resolver->setDefaultConnection($database);
+        $this->runByLayer(function (&$instance, $database){
+            $instance->resolver->setDefaultConnection($database);
 
-                Model::unguarded(
-                    function () use ($instance) {
-                        $instance->getSeeder()->__invoke();
-                    }
-                );
+            Model::unguarded(function () use ($instance){
+                $instance->getSeeder()->__invoke();
+            });
 
-                $instance->info('Database seeding completed successfully.');
-            }
-        );
+            $instance->info('Database seeding completed successfully.');
+        });
     }
 }

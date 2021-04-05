@@ -2,13 +2,13 @@
     "name": "dskripchenko/laravel-schemify",
     "description": "Schemify database manager for postgres connections",
     "license": "MIT",
-    "version": "1.0.0",
     "homepage": "https://github.com/dskripchenko/laravel-schemify",
     "keywords": [
         "laravel",
         "db",
         "postgres",
-        "schema"
+        "schema",
+        "dynamic connections"
     ],
     "authors": [
         {
@@ -17,7 +17,7 @@
         }
     ],
     "require": {
-        "dskripchenko/laravel-components-migration-installer": "@dev"
+        "dskripchenko/laravel-api": "^2.0.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master"
@@ -32,7 +32,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Dskripchenko\\Schemify\\SchemifyServiceProvider"
+                "Dskripchenko\\Schemify\\Providers\\SchemifyServiceProvider"
             ]
         }
     }

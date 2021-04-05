@@ -2,29 +2,23 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
-
-use Dskripchenko\Schemify\Console\Components\PathByTarget;
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\PathByLayer;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Symfony\Component\Console\Input\InputOption;
+use \Illuminate\Database\Console\Migrations\StatusCommand as BaseStatusCommand;
 
-class StatusCommand extends \Illuminate\Database\Console\Migrations\StatusCommand
+/**
+ * Class StatusCommand
+ * @package Dskripchenko\Schemify\Console\Migrations
+ */
+class StatusCommand extends BaseStatusCommand
 {
-    use PathByTarget, RunByTarget;
+    use PathByLayer, RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    null,
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
     /**
@@ -32,28 +26,26 @@ class StatusCommand extends \Illuminate\Database\Console\Migrations\StatusComman
      */
     public function handle()
     {
-        $this->runByTarget(
-            function (&$instance, $database) {
-                $originConnection = config('database.default');
-                $instance->migrator->setConnection($database);
-                if (!$instance->migrator->repositoryExists()) {
-                    $instance->error('Migration table not found.');
-                    return 1;
-                }
-
-                $ran = $instance->migrator->getRepository()->getRan();
-
-                $batches = $instance->migrator->getRepository()->getMigrationBatches();
-                $migrations = $instance->getStatusFor($ran, $batches);
-
-                if (count($migrations) > 0) {
-                    $instance->table(['Ran?', 'Migration', 'Batch'], $migrations);
-                } else {
-                    $instance->error('No migrations found');
-                }
-                $instance->migrator->setConnection($originConnection);
+        $this->runByLayer(function (&$instance, $database){
+            $originConnection = config('database.default');
+            $instance->migrator->setConnection($database);
+            if (! $instance->migrator->repositoryExists()) {
+                $instance->error('Migration table not found.');
+                return 1;
             }
-        );
+
+            $ran = $instance->migrator->getRepository()->getRan();
+
+            $batches = $instance->migrator->getRepository()->getMigrationBatches();
+            $migrations = $instance->getStatusFor($ran, $batches);
+
+            if (count($migrations) > 0) {
+                $instance->table(['Ran?', 'Migration', 'Batch'], $migrations);
+            } else {
+                $instance->error('No migrations found');
+            }
+            $instance->migrator->setConnection($originConnection);
+        });
     }
 }
 

@@ -2,26 +2,25 @@
 
 namespace Dskripchenko\Schemify\Console\Commands;
 
-use Dskripchenko\LaravelCMI\Components\InstallMigrationsCommand;
-
+/**
+ * Class PackagePostInstall
+ * @package Dskripchenko\Schemify\Console\Commands
+ */
 class PackagePostInstall extends InstallMigrationsCommand
 {
-    protected $componentName = 'schemify';
+    protected $componentName = 'layers';
 
-    protected $signature = 'cmi:schemify:install';
+    protected $signature = 'layers:install';
 
-    protected $description = 'Installing schemify component migrations';
+    protected $description = 'Установка миграций компонента layers';
 
-    protected function getMigrationsDir(): string
+    protected $deniedLayers = [];
+
+    protected $availableLayers = ['core'];
+
+
+    protected  function getMigrationsDir(): string
     {
-        return dirname(__DIR__, 3) . '/database/migrations';
-    }
-
-    protected function getMigrations(): array
-    {
-        return [
-            '001_create_connections_table.php',
-            '002_create_connectors_table.php',
-        ];
+        return dirname(__DIR__, 3) . DIRECTORY_SEPARATOR .  'database' . DIRECTORY_SEPARATOR .'migrations';
     }
 }

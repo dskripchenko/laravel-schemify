@@ -2,29 +2,23 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
-
-use Dskripchenko\Schemify\Console\Components\PathByTarget;
-use Dskripchenko\Schemify\Console\Components\RunByTarget;
+use Dskripchenko\Schemify\Traits\PathByLayer;
+use Dskripchenko\Schemify\Traits\RunByLayer;
 use Symfony\Component\Console\Input\InputOption;
+use \Illuminate\Database\Console\Migrations\ResetCommand as BaseResetCommand;
 
-class ResetCommand extends \Illuminate\Database\Console\Migrations\ResetCommand
+/**
+ * Class ResetCommand
+ * @package Dskripchenko\Schemify\Console\Migrations
+ */
+class ResetCommand extends BaseResetCommand
 {
-    use PathByTarget, RunByTarget;
+    use PathByLayer, RunByLayer;
 
-    protected function getOptions()
-    {
-        return array_merge(
-            parent::getOptions(),
-            [
-                [
-                    'target',
-                    null,
-                    InputOption::VALUE_OPTIONAL,
-                    'The purpose of the command. Available values are main schema, client schemas. (main|schemify[:<id>])',
-                    'main'
-                ],
-            ]
-        );
+    protected function getOptions(){
+        return array_merge(parent::getOptions(),[
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+        ]);
     }
 
     /**
@@ -32,23 +26,20 @@ class ResetCommand extends \Illuminate\Database\Console\Migrations\ResetCommand
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
-        $this->runByTarget(
-            function (&$instance, $database) {
-                $originConnection = config('database.default');
-                $instance->migrator->setConnection($database);
-                if (!$instance->migrator->repositoryExists()) {
-                    return $instance->comment('Migration table not found.');
-                }
-                $instance->migrator->setOutput($instance->output)->reset(
-                    $instance->getMigrationPaths(),
-                    $instance->option('pretend')
-                );
-                $instance->migrator->setConnection($originConnection);
+        $this->runByLayer(function (&$instance, $database){
+            $originConnection = config('database.default');
+            $instance->migrator->setConnection($database);
+            if (! $instance->migrator->repositoryExists()) {
+                return $instance->comment('Migration table not found.');
             }
-        );
+            $instance->migrator->setOutput($instance->output)->reset(
+                $instance->getMigrationPaths(), $instance->option('pretend')
+            );
+            $instance->migrator->setConnection($originConnection);
+        });
     }
 }

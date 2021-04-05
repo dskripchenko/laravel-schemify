@@ -2,43 +2,67 @@
 
 namespace Dskripchenko\Schemify\Services;
 
+use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Illuminate\Database\Connection;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class ConnectionHelper
+ * @package Dskripchenko\Schemify\Services
+ */
 class ConnectionHelper
 {
     /**
-     * @param $connectionName
      * @param array $options
      */
-    public static function prepareConnection($connectionName, $options = [])
+    public static function prepareConnection($options = [])
     {
+        $connectionName = config("database.layer");
         $connection = config("database.connections.{$connectionName}", []);
         $newConnection = array_merge_deep($connection, $options);
         config(["database.connections.{$connectionName}" => $newConnection]);
     }
 
     /**
-     * @param $connectionName
      * @param array $options
-     * @return Connection
+     * @return bool
      */
-    public static function reconnect($connectionName, $options = [])
+    public static function needToReconnect($options = []): bool
     {
-        DB::purge($connectionName);
-        static::prepareConnection($connectionName, $options);
-        $connection = DB::connection($connectionName);
-        $schema = Arr::get($options, 'schema');
-        return static::getPreparedConnection($connection, $schema);
+        $connectionName = config("database.layer");
+        $connection = config("database.connections.{$connectionName}", []);
+        return !empty(array_diff_assoc($options, $connection));
     }
 
     /**
-     * @param Connection $connection
-     * @param $schema
-     * @return Connection
+     * @param array $options
+     * @param ConnectorInterface|null $connector
+     * @return Connection|ConnectionInterface
      */
-    protected static function getPreparedConnection(Connection $connection, $schema)
+    public static function reconnect($options = [], ConnectorInterface $connector = null)
+    {
+        $connectionName = config("database.layer");
+        if(static::needToReconnect($options)) {
+            static::prepareConnection($options);
+            DB::purge($connectionName);
+            $connection = DB::connection($connectionName);
+            $schema = Arr::get($options, 'schema');
+            if ($connector) {
+                return $connector->getPreparedConnection($connection, $schema);
+            }
+            return static::getPreparedConnection($connection, $schema);
+        }
+        return DB::connection($connectionName);
+    }
+
+    /**
+     * @param ConnectionInterface $connection
+     * @param $schema
+     * @return ConnectionInterface
+     */
+    public static function getPreparedConnection(ConnectionInterface $connection, $schema)
     {
         $connection->unprepared("CREATE SCHEMA IF NOT EXISTS {$schema};");
         return $connection;

@@ -1,12 +1,15 @@
 <?php
 
-
 namespace Dskripchenko\Schemify\Providers;
 
-
 use Illuminate\Foundation\Providers\ComposerServiceProvider;
+use \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider as BaseConsoleSupportServiceProvider;
 
-class ConsoleSupportServiceProvider extends \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider
+/**
+ * Class ConsoleSupportServiceProvider
+ * @package Dskripchenko\Schemify\Providers
+ */
+class ConsoleSupportServiceProvider extends BaseConsoleSupportServiceProvider
 {
     /**
      * The provider class names.
