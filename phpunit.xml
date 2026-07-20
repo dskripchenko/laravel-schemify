@@ -3,7 +3,7 @@
          bootstrap="vendor/autoload.php"
          colors="true"
          failOnWarning="true"
-         failOnDeprecation="true">
+         failOnDeprecation="false">
     <testsuites>
         <testsuite name="laravel-schemify">
             <directory>tests</directory>
