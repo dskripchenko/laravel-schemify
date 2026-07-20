@@ -2,12 +2,35 @@ name: tests
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    name: qa (pint + phpstan)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Pint (code style)
+        run: vendor/bin/pint --test
+
+      - name: PHPStan (static analysis)
+        run: vendor/bin/phpstan analyse --no-progress --no-ansi --memory-limit=1G
+
   test:
     runs-on: ubuntu-latest
 
