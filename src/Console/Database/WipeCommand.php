@@ -3,19 +3,19 @@
 namespace Dskripchenko\Schemify\Console\Database;
 
 use Dskripchenko\Schemify\Traits\RunByLayer;
-use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Database\Console\WipeCommand as BaseWipeCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class WipeCommand
- * @package Dskripchenko\Schemify\Console\Database
  */
 class WipeCommand extends BaseWipeCommand
 {
     use RunByLayer;
 
-    protected function getOptions(){
-        return array_merge(parent::getOptions(),[
+    protected function getOptions()
+    {
+        return array_merge(parent::getOptions(), [
             ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
         ]);
     }
@@ -29,7 +29,7 @@ class WipeCommand extends BaseWipeCommand
             return;
         }
 
-        $this->runByLayer(function (&$instance, $database){
+        $this->runByLayer(function (&$instance, $database) {
             if ($instance->option('drop-views')) {
                 $instance->dropAllViews($database);
 

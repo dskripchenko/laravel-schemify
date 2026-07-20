@@ -3,11 +3,10 @@
 namespace Dskripchenko\Schemify\Providers;
 
 use Illuminate\Foundation\Providers\ComposerServiceProvider;
-use \Illuminate\Foundation\Providers\ConsoleSupportServiceProvider as BaseConsoleSupportServiceProvider;
+use Illuminate\Foundation\Providers\ConsoleSupportServiceProvider as BaseConsoleSupportServiceProvider;
 
 /**
  * Class ConsoleSupportServiceProvider
- * @package Dskripchenko\Schemify\Providers
  */
 class ConsoleSupportServiceProvider extends BaseConsoleSupportServiceProvider
 {

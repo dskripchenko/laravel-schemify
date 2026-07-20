@@ -10,11 +10,10 @@ use Dskripchenko\Schemify\Console\Migrations\RefreshCommand;
 use Dskripchenko\Schemify\Console\Migrations\ResetCommand;
 use Dskripchenko\Schemify\Console\Migrations\RollbackCommand;
 use Dskripchenko\Schemify\Console\Migrations\StatusCommand;
-use \Illuminate\Database\MigrationServiceProvider as BaseMigrationServiceProvider;
+use Illuminate\Database\MigrationServiceProvider as BaseMigrationServiceProvider;
 
 /**
  * Class MigrationServiceProvider
- * @package Dskripchenko\Schemify\Providers
  */
 class MigrationServiceProvider extends BaseMigrationServiceProvider
 {
@@ -26,7 +25,8 @@ class MigrationServiceProvider extends BaseMigrationServiceProvider
     protected function registerMigrateCommand()
     {
         $this->app->singleton('command.migrate', function ($app) {
-            return new MigrateCommand($app['migrator']);
+            // Laravel 10+ MigrateCommand ctor requires (Migrator, Dispatcher).
+            return new MigrateCommand($app['migrator'], $app['events']);
         });
     }
 
@@ -37,8 +37,9 @@ class MigrationServiceProvider extends BaseMigrationServiceProvider
      */
     protected function registerMigrateFreshCommand()
     {
-        $this->app->singleton('command.migrate.fresh', function () {
-            return new FreshCommand;
+        $this->app->singleton('command.migrate.fresh', function ($app) {
+            // Laravel 9+ FreshCommand ctor requires a Migrator instance.
+            return new FreshCommand($app['migrator']);
         });
     }
 
@@ -81,7 +82,7 @@ class MigrationServiceProvider extends BaseMigrationServiceProvider
     protected function registerMigrateRefreshCommand()
     {
         $this->app->singleton('command.migrate.refresh', function () {
-            return new RefreshCommand();
+            return new RefreshCommand;
         });
     }
 

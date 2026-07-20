@@ -4,20 +4,19 @@ namespace Dskripchenko\Schemify\Console\Migrations;
 
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
+use Illuminate\Database\Console\Migrations\FreshCommand as BaseFreshCommand;
 use Symfony\Component\Console\Input\InputOption;
-use \Illuminate\Database\Console\Migrations\FreshCommand as BaseFreshCommand;
 
 /**
  * Class FreshCommand
- * @package Dskripchenko\Schemify\Console\Migrations
  */
 class FreshCommand extends BaseFreshCommand
 {
     use PathByLayer, RunByLayer;
 
-
-    protected function getOptions(){
-        return array_merge(parent::getOptions(),[
+    protected function getOptions()
+    {
+        return array_merge(parent::getOptions(), [
             ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда', 'main'],
         ]);
     }

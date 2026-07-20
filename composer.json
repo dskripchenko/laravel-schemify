@@ -1,13 +1,16 @@
 {
     "name": "dskripchenko/laravel-schemify",
-    "description": "Schemify database manager for postgres connections",
+    "description": "Schemify database manager for PostgreSQL — dynamic multi-schema \"layer\" connections with per-layer migrate / seed / wipe via a --layer option.",
+    "type": "library",
     "license": "MIT",
     "homepage": "https://github.com/dskripchenko/laravel-schemify",
     "keywords": [
         "laravel",
         "db",
         "postgres",
+        "postgresql",
         "schema",
+        "multi-tenant",
         "dynamic connections"
     ],
     "authors": [
@@ -17,23 +20,45 @@
         }
     ],
     "require": {
-        "dskripchenko/laravel-api": "^2.0.0"
+        "php": "^8.2",
+        "laravel/framework": "^11.0 || ^12.0 || ^13.0",
+        "dskripchenko/laravel-api": "^5.0",
+        "dskripchenko/php-array-helper": "^1.0"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-master"
+        "orchestra/testbench": "^9.0 || ^10.0 || ^11.0",
+        "phpstan/phpstan": "^2.0",
+        "laravel/pint": "^1.0"
     },
     "autoload": {
         "psr-4": {
-            "Dskripchenko\\Schemify\\": [
-                "src/"
-            ]
+            "Dskripchenko\\Schemify\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dskripchenko\\Schemify\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
                 "Dskripchenko\\Schemify\\Providers\\SchemifyServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Schemify": "Dskripchenko\\Schemify\\Facades\\Schemify",
+                "LayerItemConnector": "Dskripchenko\\Schemify\\Facades\\LayerItemConnector"
+            }
         }
-    }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse",
+        "format": "pint"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

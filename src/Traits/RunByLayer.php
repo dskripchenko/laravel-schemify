@@ -6,26 +6,24 @@ use Dskripchenko\Schemify\Facades\LayerItemConnector;
 
 /**
  * Trait RunByLayer
- * @package Dskripchenko\Schemify\Console\Components
  */
 trait RunByLayer
 {
-    /**
-     * @param \Closure $callback
-     */
     public function runByLayer(\Closure $callback)
     {
         $connectionName = config('database.layer');
         $layer = $this->input->getOption('layer');
 
-        if($layer === 'core') {
+        if ($layer === config('schemify.central_layer', 'core')) {
             $callback($this, $this->option('database'));
+
             return;
         }
 
         if ($layerItem = LayerItemConnector::getLayerItemByName($layer)) {
             $layerItem->refreshConnection();
             $callback($this, $connectionName);
+
             return;
         }
 

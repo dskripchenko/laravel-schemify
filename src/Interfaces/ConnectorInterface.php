@@ -6,31 +6,20 @@ use Illuminate\Database\ConnectionInterface;
 
 /**
  * Interface ConnectorInterface
- * @package Dskripchenko\Schemify\Interfaces
  */
 interface ConnectorInterface
 {
-    /**
-     * @return ConnectionInterface
-     */
     public function refreshConnection(): ConnectionInterface;
 
-    /**
-     * @param ConnectionInterface $connection
-     * @param $schema
-     * @return ConnectionInterface
-     */
     public function getPreparedConnection(ConnectionInterface $connection, $schema): ConnectionInterface;
 
     /**
-     * @param $name
-     * @return ConnectorInterface
+     * @return ConnectorInterface|null Null when no layer with the given name exists.
      */
-    public static function getLayerItemByName($name):ConnectorInterface;
+    public static function getLayerItemByName($name): ?ConnectorInterface;
 
     /**
-     * @param null $type
-     * @return iterable
+     * @param  null  $type
      */
-    public static function getAllLayerItems($type = null):iterable;
+    public static function getAllLayerItems($type = null): iterable;
 }

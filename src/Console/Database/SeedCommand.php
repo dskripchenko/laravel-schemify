@@ -3,20 +3,20 @@
 namespace Dskripchenko\Schemify\Console\Database;
 
 use Dskripchenko\Schemify\Traits\RunByLayer;
+use Illuminate\Database\Console\Seeds\SeedCommand as BaseSeedCommand;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\Console\Input\InputOption;
-use Illuminate\Database\Console\Seeds\SeedCommand as BaseSeedCommand;
 
 /**
  * Class SeedCommand
- * @package Dskripchenko\Schemify\Console\Database
  */
 class SeedCommand extends BaseSeedCommand
 {
     use RunByLayer;
 
-    protected function getOptions(){
-        return array_merge(parent::getOptions(),[
+    protected function getOptions()
+    {
+        return array_merge(parent::getOptions(), [
             ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
         ]);
     }
@@ -30,10 +30,10 @@ class SeedCommand extends BaseSeedCommand
             return;
         }
 
-        $this->runByLayer(function (&$instance, $database){
+        $this->runByLayer(function (&$instance, $database) {
             $instance->resolver->setDefaultConnection($database);
 
-            Model::unguarded(function () use ($instance){
+            Model::unguarded(function () use ($instance) {
                 $instance->getSeeder()->__invoke();
             });
 

@@ -2,82 +2,64 @@
 
 namespace Dskripchenko\Schemify\Models;
 
-use Dskripchenko\LaravelApi\Exceptions\ApiException;
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Services\ConnectionHelper;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Class LayerItem
- * @package Dskripchenko\Schemify\Models
+ * @property string $layer
+ * @property string $name
+ * @property string $schema_name
+ * @property int $db_connection_id
  */
 class LayerItem extends Model implements ConnectorInterface
 {
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    public function dbConnection()
+    use SoftDeletes;
+
+    protected $fillable = [
+        'layer',
+        'name',
+        'schema_name',
+        'db_connection_id',
+    ];
+
+    public function dbConnection(): HasOne
     {
         return $this->hasOne(DbConnection::class, 'id', 'db_connection_id');
     }
 
-
-    /**
-     * @return iterable
-     */
-    public static function getAllLayerItems($type = null):iterable
+    public static function getAllLayerItems($type = null): iterable
     {
         $query = static::query();
-        if($type) {
+        if ($type) {
             $query->where('layer', $type);
         }
+
         return $query->get();
     }
 
-
     /**
-     * @param $name
-     * @return ConnectorInterface
-     * @throws ApiException
+     * @return ConnectorInterface|null Null when no layer with the given name exists.
      */
-    public static function getLayerItemByName($name):ConnectorInterface
+    public static function getLayerItemByName($name): ?ConnectorInterface
     {
-        $connector = static::query()->where('name', $name)->first();
-
-        if (!$connector) {
-            throw new ApiException('layer_not_found', "Layer {$name} not found");
-        }
-
-        if (! $connector instanceof ConnectorInterface) {
-            $class = get_class($connector);
-            throw new ApiException('invalid_connector', "Class {$class} isn't ConnectorInterface");
-        }
-
-        return $connector;
+        return static::query()->where('name', $name)->first();
     }
 
-
-    /**
-     * @return ConnectionInterface
-     */
     public function refreshConnection(): ConnectionInterface
     {
         $options = array_merge_deep($this->dbConnection->getOptions(), [
-            'schema' => $this->schema_name
+            'schema' => $this->schema_name,
         ]);
 
         return ConnectionHelper::reconnect($options, $this);
     }
 
-    /**
-     * @param ConnectionInterface $connection
-     * @param $schema
-     * @return ConnectionInterface
-     */
     public function getPreparedConnection(ConnectionInterface $connection, $schema): ConnectionInterface
     {
         return ConnectionHelper::getPreparedConnection($connection, $schema);
     }
-
 }

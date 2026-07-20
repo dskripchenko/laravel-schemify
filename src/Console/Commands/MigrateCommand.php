@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Artisan;
 
 /**
  * Class Automigrate
- * @package Dskripchenko\Schemify\Console\Commands
  */
 class MigrateCommand extends Command
 {
@@ -23,17 +22,17 @@ class MigrateCommand extends Command
     protected function applyMigrations(): void
     {
         $closure = function ($layers = []) use (&$closure) {
-            if (!is_array($layers)) {
+            if (! is_array($layers)) {
                 return;
             }
 
             foreach ($layers as $layer => $value) {
                 // пропускаем все выключенные в конфиге слои
-                if (!$value) {
+                if (! $value) {
                     continue;
                 }
 
-                Artisan::call("migrate", ['--layer' => $layer]);
+                Artisan::call('migrate', ['--layer' => $layer]);
                 $closure($value);
             }
         };

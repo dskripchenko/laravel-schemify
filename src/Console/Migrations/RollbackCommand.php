@@ -4,19 +4,19 @@ namespace Dskripchenko\Schemify\Console\Migrations;
 
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
+use Illuminate\Database\Console\Migrations\RollbackCommand as BaseRollbackCommand;
 use Symfony\Component\Console\Input\InputOption;
-use \Illuminate\Database\Console\Migrations\RollbackCommand as BaseRollbackCommand;
 
 /**
  * Class RollbackCommand
- * @package Dskripchenko\Schemify\Console\Migrations
  */
 class RollbackCommand extends BaseRollbackCommand
 {
     use PathByLayer, RunByLayer;
 
-    protected function getOptions(){
-        return array_merge(parent::getOptions(),[
+    protected function getOptions()
+    {
+        return array_merge(parent::getOptions(), [
             ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
         ]);
     }
@@ -30,7 +30,7 @@ class RollbackCommand extends BaseRollbackCommand
             return;
         }
 
-        $this->runByLayer(function (&$instance, $database){
+        $this->runByLayer(function (&$instance, $database) {
             $originConnection = config('database.default');
             $instance->migrator->setConnection($database);
             $instance->migrator->setOutput($instance->output)->rollback(

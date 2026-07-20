@@ -8,24 +8,31 @@ use Illuminate\Database\ConnectionInterface;
 
 /**
  * Class DynamicConnectionTrait
- * @package Dskripchenko\Schemify\Traits
+ *
+ * Binds an Eloquent model to a Schemify layer. If a layer is active at runtime
+ * (Schemify::use()/switchTo()), the model follows it; otherwise it falls back
+ * to getLayerItemName().
  */
 trait DynamicConnectionTrait
 {
     /**
      * @return Connection|ConnectionInterface
+     *
      * @throws \Exception
      */
     public function getConnection()
     {
-        $layerItem = LayerItemConnector::getLayerItemByName($this->getLayerItemName());
-        if(!$layerItem) {
-            throw new \Exception("Not found 'LayerItem' with name - {$this->getLayerItemName()}");
+        $name = app('schemify')->current() ?? $this->getLayerItemName();
+
+        $layerItem = LayerItemConnector::getLayerItemByName($name);
+        if (! $layerItem) {
+            throw new \Exception("Not found 'LayerItem' with name - {$name}");
         }
+
         return $layerItem->refreshConnection();
     }
 
-    public function getLayerItemName():string
+    public function getLayerItemName(): string
     {
         return 'main';
     }

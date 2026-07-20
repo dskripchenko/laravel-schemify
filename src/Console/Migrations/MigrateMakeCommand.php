@@ -4,11 +4,10 @@ namespace Dskripchenko\Schemify\Console\Migrations;
 
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
-use \Illuminate\Database\Console\Migrations\MigrateMakeCommand as BaseMigrateMakeCommand;
+use Illuminate\Database\Console\Migrations\MigrateMakeCommand as BaseMigrateMakeCommand;
 
 /**
  * Class MigrateMakeCommand
- * @package Dskripchenko\Schemify\Console\Migrations
  */
 class MigrateMakeCommand extends BaseMigrateMakeCommand
 {

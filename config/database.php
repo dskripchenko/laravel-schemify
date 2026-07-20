@@ -23,7 +23,7 @@ return [
     'layersStruct' => [
         env('LAYER_ROOT', 'core') => [
             env('LAYER_MAIN', 'main') => true,
-        ]
-    ]
+        ],
+    ],
 
 ];

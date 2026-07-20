@@ -1,0 +1,169 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Dskripchenko\\Schemify\\Models\\LayerItem\:\:\$dbConnection\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Console/Commands/ListLayersCommand.php
+
+		-
+			message: '#^Access to an undefined property Dskripchenko\\Schemify\\Models\\LayerItem\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Console/Commands/ListLayersCommand.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Dskripchenko\\Schemify\\Models\\LayerItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: src/Console/Commands/ListLayersCommand.php
+
+		-
+			message: '#^Access to an undefined property Dskripchenko\\Schemify\\Models\\DbConnection\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Console/Commands/NewLayerCommand.php
+
+		-
+			message: '#^Call to an undefined static method Dskripchenko\\Schemify\\Models\\DbConnection\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Console/Commands/NewLayerCommand.php
+
+		-
+			message: '#^Call to an undefined static method Dskripchenko\\Schemify\\Models\\LayerItem\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Console/Commands/NewLayerCommand.php
+
+		-
+			message: '#^Call to an undefined static method Dskripchenko\\Schemify\\Models\\DbConnection\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Console/Commands/PackagePostInstall.php
+
+		-
+			message: '#^Call to an undefined static method Dskripchenko\\Schemify\\Models\\LayerItem\:\:create\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Console/Commands/PackagePostInstall.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Database\\SeedCommand\:\:handle\(\) should return int but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Console/Database/SeedCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Database\\SeedCommand\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Database/SeedCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Database\\WipeCommand\:\:handle\(\) should return int but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Console/Database/WipeCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Database\\WipeCommand\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Database/WipeCommand.php
+
+		-
+			message: '#^Call to an undefined method Dskripchenko\\Schemify\\Console\\Migrations\\FreshCommand\:\:usingRealPath\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Console/Migrations/FreshCommand.php
+
+		-
+			message: '#^Return type \(void\) of method Dskripchenko\\Schemify\\Console\\Migrations\\FreshCommand\:\:handle\(\) should be compatible with return type \(int\) of method Illuminate\\Database\\Console\\Migrations\\FreshCommand\:\:handle\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Console/Migrations/FreshCommand.php
+
+		-
+			message: '#^Call to an undefined method Dskripchenko\\Schemify\\Console\\Migrations\\InstallCommand\:\:usingRealPath\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Console/Migrations/InstallCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\MigrateCommand\:\:handle\(\) should return int but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Console/Migrations/MigrateCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\MigrateCommand\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Migrations/MigrateCommand.php
+
+		-
+			message: '#^Call to an undefined method Dskripchenko\\Schemify\\Console\\Migrations\\RefreshCommand\:\:usingRealPath\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Console/Migrations/RefreshCommand.php
+
+		-
+			message: '#^Return type \(void\) of method Dskripchenko\\Schemify\\Console\\Migrations\\RefreshCommand\:\:handle\(\) should be compatible with return type \(int\) of method Illuminate\\Database\\Console\\Migrations\\RefreshCommand\:\:handle\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Console/Migrations/RefreshCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\ResetCommand\:\:handle\(\) should return int but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Console/Migrations/ResetCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\ResetCommand\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Migrations/ResetCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\RollbackCommand\:\:handle\(\) should return int but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Console/Migrations/RollbackCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\RollbackCommand\:\:handle\(\) should return int but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Migrations/RollbackCommand.php
+
+		-
+			message: '#^Method Dskripchenko\\Schemify\\Console\\Migrations\\StatusCommand\:\:handle\(\) should return int\|null but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Console/Migrations/StatusCommand.php
+
+		-
+			message: '#^Access to an undefined property Dskripchenko\\Schemify\\Models\\LayerItem\:\:\$dbConnection\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/LayerItem.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/Models/LayerItem.php
+
+		-
+			message: '#^PHPDoc type array of property Dskripchenko\\Schemify\\Providers\\ConsoleSupportServiceProvider\:\:\$providers is not covariant with PHPDoc type array\<string\> of overridden property Illuminate\\Foundation\\Providers\\ConsoleSupportServiceProvider\:\:\$providers\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Providers/ConsoleSupportServiceProvider.php
+
+		-
+			message: '#^Trait Dskripchenko\\Schemify\\Traits\\DynamicConnectionTrait is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Traits/DynamicConnectionTrait.php

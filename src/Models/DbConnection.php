@@ -3,17 +3,39 @@
 namespace Dskripchenko\Schemify\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Class DbConnection
- * @package Dskripchenko\Schemify\Models
+ * @property string $driver
+ * @property string $host
+ * @property string $port
+ * @property string $database
+ * @property string $username
+ * @property string $password
  */
 class DbConnection extends Model
 {
+    use SoftDeletes;
+
+    protected $fillable = [
+        'driver',
+        'host',
+        'port',
+        'database',
+        'username',
+        'password',
+    ];
+
+    protected $casts = [
+        'password' => 'encrypted',
+    ];
+
     /**
-     * @return array
+     * @return array<string, mixed>
      */
-    public function getOptions(){
+    public function getOptions(): array
+    {
         return [
             'driver' => $this->driver,
             'host' => $this->host,
@@ -24,10 +46,8 @@ class DbConnection extends Model
         ];
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function layerItems(){
+    public function layerItems(): HasMany
+    {
         return $this->hasMany(LayerItem::class, 'db_connection_id', 'id');
     }
 }

@@ -4,11 +4,10 @@ namespace Dskripchenko\Schemify\Console\Migrations;
 
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
-use \Illuminate\Database\Console\Migrations\MigrateCommand as BaseMigrateCommand;
+use Illuminate\Database\Console\Migrations\MigrateCommand as BaseMigrateCommand;
 
 /**
  * Class MigrateCommand
- * @package Dskripchenko\Schemify\Console\Migrations
  */
 class MigrateCommand extends BaseMigrateCommand
 {
@@ -33,7 +32,7 @@ class MigrateCommand extends BaseMigrateCommand
      */
     public function handle()
     {
-        if (!$this->confirmToProceed()) {
+        if (! $this->confirmToProceed()) {
             return;
         }
 
@@ -48,12 +47,12 @@ class MigrateCommand extends BaseMigrateCommand
                         $instance->getMigrationPaths(),
                         [
                             'pretend' => $instance->option('pretend'),
-                            'step'    => $instance->option('step'),
+                            'step' => $instance->option('step'),
                         ]
                     );
 
                 if ($instance->option('seed')
-                    && !$instance->option(
+                    && ! $instance->option(
                         'pretend'
                     )
                 ) {
@@ -61,7 +60,7 @@ class MigrateCommand extends BaseMigrateCommand
                         'db:seed',
                         [
                             '--force' => true,
-                            '--layer' => $instance->option('layer')
+                            '--layer' => $instance->option('layer'),
                         ]
                     );
                 }
@@ -70,7 +69,6 @@ class MigrateCommand extends BaseMigrateCommand
         );
     }
 
-
     protected function prepareDatabase()
     {
         $this->call(
@@ -78,7 +76,7 @@ class MigrateCommand extends BaseMigrateCommand
             array_filter(
                 [
                     '--database' => $this->option('database'),
-                    '--layer'   => $this->input->getOption('layer'),
+                    '--layer' => $this->input->getOption('layer'),
                 ]
             )
         );

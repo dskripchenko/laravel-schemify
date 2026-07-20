@@ -7,7 +7,6 @@ use Dskripchenko\Schemify\Console\Database\WipeCommand;
 
 /**
  * Class ArtisanServiceProvider
- * @package Dskripchenko\Schemify\Providers
  */
 class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanServiceProvider
 {
@@ -19,7 +18,7 @@ class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanSer
     protected function registerDbWipeCommand()
     {
         $this->app->singleton('command.db.wipe', function () {
-            return new WipeCommand; //use custom App\Console\Database\WipeCommand
+            return new WipeCommand; // use custom App\Console\Database\WipeCommand
         });
     }
 
@@ -39,6 +38,4 @@ class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanSer
     {
         parent::register();
     }
-
-
 }

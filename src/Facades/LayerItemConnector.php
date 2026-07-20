@@ -3,13 +3,13 @@
 namespace Dskripchenko\Schemify\Facades;
 
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
-use \Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Facades\Facade;
+
 /**
- * @method static ConnectorInterface getLayerItemByName($name)
- * @method static ConnectorInterface[] getAllLayerItems($type)()
+ * @method static ConnectorInterface|null getLayerItemByName($name)
+ * @method static iterable getAllLayerItems($type = null)
  *
- * Class SegmentConnector
- * @package Dskripchenko\Schemify\Facades
+ * Class LayerItemConnector
  */
 class LayerItemConnector extends Facade
 {

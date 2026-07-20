@@ -2,18 +2,17 @@
 
 namespace Dskripchenko\Schemify\Console\Commands;
 
+use Dskripchenko\LaravelApi\Console\Commands\ApiInstall as BaseApiInstall;
 use Dskripchenko\Schemify\Models\DbConnection;
 use Dskripchenko\Schemify\Models\LayerItem;
 use Illuminate\Support\Facades\Artisan;
-use Dskripchenko\LaravelApi\Console\Commands\ApiInstall as BaseApiInstall;
 
 /**
  * Class ApiInstall
- * @package Dskripchenko\Schemify\Console\Commands
  */
 class ApiInstall extends BaseApiInstall
 {
-    protected function getEnvConfig() : array
+    protected function getEnvConfig(): array
     {
         return array_merge_deep(parent::getEnvConfig(), [
             'Параметры подключения к базе данных' => [
@@ -27,23 +26,26 @@ class ApiInstall extends BaseApiInstall
                     'name' => 'Схема',
                     'default' => 'core',
                 ],
-            ]
+            ],
         ]);
     }
 
     protected function onEndSetup(): void
     {
-        Artisan::call('migrate', ['--layer' => env('LAYER_ROOT', 'core')]);
+        // Bootstrap: publish assets, migrate the central layer, register the
+        // default layer (creates db_connections / layer_items).
+        Artisan::call('layers:install', ['--force' => true]);
 
         $main = env('LAYER_MAIN', 'main');
-        $mainLayer = LayerItem::query()->where('schema_name', $main)->first();
-        if (!$mainLayer) {
+        $mainLayer = LayerItem::query()->where('name', $main)->first();
+        if (! $mainLayer) {
             $this->error("Не найден слой '{$main}'");
+
             return;
         }
 
         $connection = DbConnection::query()->where('id', $mainLayer->db_connection_id)->first();
-        if($connection) {
+        if ($connection) {
             $connection->driver = env('DB_CONNECTION');
             $connection->host = env('DB_HOST');
             $connection->port = env('DB_PORT');
@@ -53,6 +55,6 @@ class ApiInstall extends BaseApiInstall
             $connection->save();
         }
 
-        Artisan::call('automigrate');
+        Artisan::call('layers:migrate');
     }
 }
