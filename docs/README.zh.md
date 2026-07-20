@@ -1,6 +1,6 @@
 # dskripchenko/laravel-schemify
 
-> 🌐 [English](README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · **中文**
+> 🌐 [English](../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · **中文**
 
 为 Laravel 提供动态的**多模式 PostgreSQL**（multi-schema）连接。Schemify 将每个
 PostgreSQL 模式建模为一个*层*（layer）——即一条指向 `db_connections` 记录的
@@ -10,7 +10,7 @@ PostgreSQL 模式建模为一个*层*（layer）——即一条指向 `db_connec
 
 [![Packagist](https://img.shields.io/packagist/v/dskripchenko/laravel-schemify)](https://packagist.org/packages/dskripchenko/laravel-schemify)
 [![Tests](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml/badge.svg)](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml)
-[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](LICENSE.md)
+[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](../LICENSE.md)
 
 > Schemify 是一个接入迁移命令的轻量级模式/连接切换器——它**不是**一个完整的
 > 多租户框架。如果你需要自动租户识别、缓存/队列/文件系统隔离，或单库行级作用域，
@@ -51,14 +51,14 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 
 ## 文档
 
-- [快速开始](docs/zh/getting-started.md)
-- [命令](docs/zh/commands.md)
-- [运行时层切换](docs/zh/runtime.md)
-- [迁移](docs/zh/migrations.md)
-- [安全](docs/zh/security.md)
+- [快速开始](zh/getting-started.md)
+- [命令](zh/commands.md)
+- [运行时层切换](zh/runtime.md)
+- [迁移](zh/migrations.md)
+- [安全](zh/security.md)
 
-从 2.x 升级？请参阅 [UPGRADE.md](UPGRADE.md) 和 [CHANGELOG](CHANGELOG.md)。
+从 2.x 升级？请参阅 [UPGRADE.md](UPGRADE.md) 和 [CHANGELOG](../CHANGELOG.md)。
 
 ## 许可证
 
-[MIT](LICENSE.md) © Denis Skripchenko
+[MIT](../LICENSE.md) © Denis Skripchenko

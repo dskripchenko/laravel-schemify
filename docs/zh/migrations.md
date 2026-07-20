@@ -69,7 +69,7 @@ php artisan migrate --layer=acme --path=database/migrations/special
 
 在 3.0 之前，每个层在 `database/migrations/<layer>/` 下都有一份自己的迁移副本。
 请将规范副本移入单一的 `database/migrations/tenant/` 文件夹，并删除各层的重复副本。
-参见 [UPGRADE.md](../../UPGRADE.md)。
+参见 [UPGRADE.md](../UPGRADE.md)。
 
 ## 另请参阅
 

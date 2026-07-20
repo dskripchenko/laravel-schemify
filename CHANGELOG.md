@@ -10,7 +10,7 @@ First modernized, stable release. Supported versions: **PHP 8.2–8.5**,
   `database/migrations/<layer>/`. A single shared set
   (`schemify.migrations.path`, default `database/migrations/tenant`) is run
   against each layer; the central layer uses `database/migrations`. See
-  [UPGRADE.md](UPGRADE.md).
+  [UPGRADE.md](docs/UPGRADE.md).
 - **`db_connections.password` is now stored encrypted** (Laravel `encrypted`
   cast, `text` column). Existing plaintext values must be re-saved through the
   model; `APP_KEY` is required.

@@ -1,6 +1,6 @@
 # dskripchenko/laravel-schemify
 
-> 🌐 [English](README.md) · **Русский** · [Deutsch](README.de.md) · [中文](README.zh.md)
+> 🌐 [English](../README.md) · **Русский** · [Deutsch](README.de.md) · [中文](README.zh.md)
 
 Динамические **мультисхемные PostgreSQL**-соединения для Laravel. Schemify
 моделирует каждую PostgreSQL-схему как *слой* (строку `layer_items`,
@@ -11,7 +11,7 @@ Laravel `migrate`, `db:seed` и `db:wipe`, чтобы вы могли запус
 
 [![Packagist](https://img.shields.io/packagist/v/dskripchenko/laravel-schemify)](https://packagist.org/packages/dskripchenko/laravel-schemify)
 [![Tests](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml/badge.svg)](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml)
-[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](LICENSE.md)
+[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](../LICENSE.md)
 
 > Schemify — это лёгкий переключатель схем/соединений, встроенный в команды
 > миграций, а **не** полноценный фреймворк мультитенантности. Если вам нужна
@@ -55,14 +55,14 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 
 ## Документация
 
-- [Начало работы](docs/ru/getting-started.md)
-- [Команды](docs/ru/commands.md)
-- [Переключение слоёв во время выполнения](docs/ru/runtime.md)
-- [Миграции](docs/ru/migrations.md)
-- [Безопасность](docs/ru/security.md)
+- [Начало работы](ru/getting-started.md)
+- [Команды](ru/commands.md)
+- [Переключение слоёв во время выполнения](ru/runtime.md)
+- [Миграции](ru/migrations.md)
+- [Безопасность](ru/security.md)
 
-Обновляетесь с 2.x? Смотрите [UPGRADE.md](UPGRADE.md) и [CHANGELOG](CHANGELOG.md).
+Обновляетесь с 2.x? Смотрите [UPGRADE.md](UPGRADE.md) и [CHANGELOG](../CHANGELOG.md).
 
 ## Лицензия
 
-[MIT](LICENSE.md) © Denis Skripchenko
+[MIT](../LICENSE.md) © Denis Skripchenko

@@ -1,6 +1,6 @@
 # dskripchenko/laravel-schemify
 
-> 🌐 **English** · [Русский](README.ru.md) · [Deutsch](README.de.md) · [中文](README.zh.md)
+> 🌐 **English** · [Русский](docs/README.ru.md) · [Deutsch](docs/README.de.md) · [中文](docs/README.zh.md)
 
 Dynamic **multi-schema PostgreSQL** connections for Laravel. Schemify models
 each PostgreSQL schema as a *layer* (a `layer_items` row pointing at a
@@ -60,7 +60,7 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 - [Migrations](docs/en/migrations.md)
 - [Security](docs/en/security.md)
 
-Upgrading from 2.x? See [UPGRADE.md](UPGRADE.md) and the [CHANGELOG](CHANGELOG.md).
+Upgrading from 2.x? See [UPGRADE.md](docs/UPGRADE.md) and the [CHANGELOG](CHANGELOG.md).
 
 ## License
 

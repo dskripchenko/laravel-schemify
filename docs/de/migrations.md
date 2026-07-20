@@ -73,7 +73,7 @@ php artisan migrate --layer=acme --path=database/migrations/special
 Vor 3.0 hatte jeder Layer seine eigene Kopie jeder Migration unter
 `database/migrations/<layer>/`. Verschiebe die kanonischen Kopien in einen
 einzigen Ordner `database/migrations/tenant/` und lösche die Duplikate pro
-Layer. Siehe [UPGRADE.md](../../UPGRADE.md).
+Layer. Siehe [UPGRADE.md](../UPGRADE.md).
 
 ## Siehe auch
 
