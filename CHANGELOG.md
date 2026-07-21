@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.2.0
+
+Integration fixes driven by the first host application. Behavioural — review
+before upgrading if you relied on the old quirks.
+
+### Changed
+- **`--layer` now defaults to the configured central layer** (was a hardcoded
+  `main`): a plain `php artisan migrate` behaves exactly like vanilla Laravel —
+  central run on the default connection. Deploy scripts need no changes.
+- **Tenant runs use only the shared tenant path.** `migrate --layer=X` no
+  longer replays provider-registered migrations (`loadMigrationsFrom` — e.g.
+  vendor package tables) into every layer schema; those belong to the central
+  run. Central runs keep vanilla path merging.
+
+### Fixed
+- Command overrides are now applied via container `extend()` on both the
+  legacy `command.*` aliases and the `Illuminate\…\*Command` class abstracts —
+  the modern console kernel resolves by class, so the overrides actually take
+  effect regardless of provider registration order.
+- `migrate:install` (per-layer) crashed on Laravel 11+ where
+  `config('database.migrations')` is an array — the table name is now read
+  from `migrations.table`.
+
 ## 3.1.0
 
 Runtime additions for host applications that manage layers from code (driven by

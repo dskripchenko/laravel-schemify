@@ -17,7 +17,7 @@ class RefreshCommand extends BaseRefreshCommand
     protected function getOptions()
     {
         return array_merge(parent::getOptions(), [
-            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', null],
         ]);
     }
 
@@ -58,7 +58,7 @@ class RefreshCommand extends BaseRefreshCommand
             '--path' => $path,
             '--realpath' => $this->input->getOption('realpath'),
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
 
         if ($this->needsSeeding()) {
@@ -82,7 +82,7 @@ class RefreshCommand extends BaseRefreshCommand
             '--realpath' => $this->input->getOption('realpath'),
             '--step' => $step,
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
     }
 
@@ -100,7 +100,7 @@ class RefreshCommand extends BaseRefreshCommand
             '--path' => $path,
             '--realpath' => $this->input->getOption('realpath'),
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
     }
 
@@ -126,7 +126,7 @@ class RefreshCommand extends BaseRefreshCommand
             '--database' => $database,
             '--class' => $this->option('seeder') ?: 'DatabaseSeeder',
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
     }
 }

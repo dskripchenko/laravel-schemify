@@ -20,7 +20,7 @@ class InstallCommand extends BaseInstallCommand
     protected function getOptions()
     {
         return array_merge(parent::getOptions(), [
-            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', null],
         ]);
     }
 
@@ -32,7 +32,10 @@ class InstallCommand extends BaseInstallCommand
         $this->runByLayer(function (&$instance, $database) {
             $connection = DB::connection($database);
             $resolver = new ConnectionResolver([$database => $connection]);
-            $repository = new DatabaseMigrationRepository($resolver, config('database.migrations'));
+            // Laravel 11+: database.migrations — массив {table, ...}; ранее — строка.
+            $migrations = config('database.migrations');
+            $table = is_array($migrations) ? ($migrations['table'] ?? 'migrations') : (string) $migrations;
+            $repository = new DatabaseMigrationRepository($resolver, $table);
             $repository->setSource($database);
             if (! $repository->repositoryExists()) {
                 $repository->createRepository();

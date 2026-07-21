@@ -25,7 +25,7 @@ class MigrateCommand extends BaseMigrateCommand
                 {--pretend : Dump the SQL queries that would be run}
                 {--seed : Indicates if the seed task should be re-run}
                 {--step : Force the migrations to be run so they can be rolled back individually}
-                {--layer=main : Слой к которому применяется команда.}';
+                {--layer= : Слой к которому применяется команда.}';
 
     /**
      * @throws \Exception
@@ -60,7 +60,7 @@ class MigrateCommand extends BaseMigrateCommand
                         'db:seed',
                         [
                             '--force' => true,
-                            '--layer' => $instance->option('layer'),
+                            '--layer' => $instance->layerOption(),
                         ]
                     );
                 }
@@ -76,7 +76,7 @@ class MigrateCommand extends BaseMigrateCommand
             array_filter(
                 [
                     '--database' => $this->option('database'),
-                    '--layer' => $this->input->getOption('layer'),
+                    '--layer' => $this->layerOption(),
                 ]
             )
         );

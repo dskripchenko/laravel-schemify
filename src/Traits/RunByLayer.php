@@ -9,12 +9,14 @@ use Dskripchenko\Schemify\Facades\LayerItemConnector;
  */
 trait RunByLayer
 {
+    use ResolvesLayerOption;
+
     public function runByLayer(\Closure $callback)
     {
         $connectionName = config('database.layer');
-        $layer = $this->input->getOption('layer');
+        $layer = $this->layerOption();
 
-        if ($layer === config('schemify.central_layer', 'core')) {
+        if ($this->isCentralLayer()) {
             $callback($this, $this->option('database'));
 
             return;

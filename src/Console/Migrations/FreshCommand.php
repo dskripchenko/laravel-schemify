@@ -17,7 +17,7 @@ class FreshCommand extends BaseFreshCommand
     protected function getOptions()
     {
         return array_merge(parent::getOptions(), [
-            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда', 'main'],
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда', null],
         ]);
     }
 
@@ -39,7 +39,7 @@ class FreshCommand extends BaseFreshCommand
             '--drop-views' => $this->option('drop-views'),
             '--drop-types' => $this->option('drop-types'),
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
 
         $this->call('migrate', array_filter([
@@ -48,7 +48,7 @@ class FreshCommand extends BaseFreshCommand
             '--realpath' => $this->input->getOption('realpath'),
             '--force' => true,
             '--step' => $this->option('step'),
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
 
         if ($this->needsSeeding()) {
@@ -68,7 +68,7 @@ class FreshCommand extends BaseFreshCommand
             '--database' => $database,
             '--class' => $this->option('seeder') ?: 'DatabaseSeeder',
             '--force' => true,
-            '--layer' => $this->option('layer'),
+            '--layer' => $this->layerOption(),
         ]));
     }
 }

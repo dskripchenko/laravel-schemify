@@ -16,7 +16,7 @@ class WipeCommand extends BaseWipeCommand
     protected function getOptions()
     {
         return array_merge(parent::getOptions(), [
-            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', 'main'],
+            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', null],
         ]);
     }
 

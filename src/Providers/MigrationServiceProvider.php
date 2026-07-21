@@ -18,6 +18,51 @@ use Illuminate\Database\MigrationServiceProvider as BaseMigrationServiceProvider
 class MigrationServiceProvider extends BaseMigrationServiceProvider
 {
     /**
+     * Наши singleton'ы могут быть перекрыты отложенным (deferred) core
+     * MigrationServiceProvider'ом, когда console kernel резолвит команды —
+     * какой биндинг «победит», зависит от порядка. extend() применяется к
+     * ИТОГОВОМУ биндингу независимо от того, кто его зарегистрировал, и
+     * детерминированно возвращает наши override-команды.
+     */
+    public function register()
+    {
+        parent::register();
+
+        $factories = [
+            MigrateCommand::class => fn ($app) => new MigrateCommand($app['migrator'], $app['events']),
+            FreshCommand::class => fn ($app) => new FreshCommand($app['migrator']),
+            InstallCommand::class => fn ($app) => new InstallCommand($app['migration.repository']),
+            MigrateMakeCommand::class => fn ($app) => new MigrateMakeCommand($app['migration.creator'], $app['composer']),
+            RefreshCommand::class => fn () => new RefreshCommand,
+            ResetCommand::class => fn ($app) => new ResetCommand($app['migrator']),
+            RollbackCommand::class => fn ($app) => new RollbackCommand($app['migrator']),
+            StatusCommand::class => fn ($app) => new StatusCommand($app['migrator']),
+        ];
+
+        // Современный console kernel резолвит команды по CLASS-абстрактам
+        // Illuminate\…\*Command, легаси-строки command.* остаются для BC.
+        $abstracts = [
+            MigrateCommand::class => ['command.migrate', \Illuminate\Database\Console\Migrations\MigrateCommand::class],
+            FreshCommand::class => ['command.migrate.fresh', \Illuminate\Database\Console\Migrations\FreshCommand::class],
+            InstallCommand::class => ['command.migrate.install', \Illuminate\Database\Console\Migrations\InstallCommand::class],
+            MigrateMakeCommand::class => ['command.migrate.make', \Illuminate\Database\Console\Migrations\MigrateMakeCommand::class],
+            RefreshCommand::class => ['command.migrate.refresh', \Illuminate\Database\Console\Migrations\RefreshCommand::class],
+            ResetCommand::class => ['command.migrate.reset', \Illuminate\Database\Console\Migrations\ResetCommand::class],
+            RollbackCommand::class => ['command.migrate.rollback', \Illuminate\Database\Console\Migrations\RollbackCommand::class],
+            StatusCommand::class => ['command.migrate.status', \Illuminate\Database\Console\Migrations\StatusCommand::class],
+        ];
+
+        foreach ($abstracts as $ours => $targets) {
+            $factory = $factories[$ours];
+            foreach ($targets as $abstract) {
+                $this->app->extend($abstract, function ($command, $app) use ($factory) {
+                    return $factory($app);
+                });
+            }
+        }
+    }
+
+    /**
      * Register the command.
      *
      * @return void
