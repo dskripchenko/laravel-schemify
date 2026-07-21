@@ -34,4 +34,16 @@ return [
         'path' => env('SCHEMIFY_TENANT_MIGRATIONS_PATH', database_path('migrations/tenant')),
         'central_path' => database_path('migrations'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue propagation
+    |--------------------------------------------------------------------------
+    | When enabled, jobs dispatched while a layer is active carry that layer in
+    | their payload; workers switch to it before running the job and restore
+    | the previous state afterwards. Opt-in — see Queue\LayerPropagator.
+    */
+    'queue' => [
+        'propagate' => env('SCHEMIFY_QUEUE_PROPAGATE', false),
+    ],
 ];

@@ -69,6 +69,46 @@ Schemify::use('acme', function () {
 Report::count();             // использует getLayerItemName() → 'main'
 ```
 
+## Провижининг слоёв в рантайме (v3.1)
+
+`layers:new` / `layers:delete` — тонкие обёртки над менеджером; те же операции
+доступны программно (например, из админ-контроллера):
+
+```php
+use Dskripchenko\Schemify\Facades\Schemify;
+
+$layer = Schemify::provision('acme', schema: 'acme', group: 'workspace', migrate: true);
+Schemify::deprovision('acme', dropSchema: true);
+```
+
+`provision()` валидирует имя схемы, регистрирует слой (клонируя дефолтное
+подключение, если не передан `connectionId`), создаёт схему и — при
+`migrate: true` — прогоняет tenant-миграции. Активный до вызова слой
+сохраняется. Оба метода бросают `InvalidArgumentException` при некорректном входе.
+
+## События (v3.1)
+
+- `Dskripchenko\Schemify\Events\LayerSwitched` — после каждого `switchTo()`
+  (`previous`, `current`).
+- `Dskripchenko\Schemify\Events\LayerForgotten` — после `forget()` (`previous`).
+
+Используйте их для пере-скоупа зависимой от слоя инфраструктуры, например
+кэш-префикса:
+
+```php
+Event::listen(LayerSwitched::class, function (LayerSwitched $e) {
+    config(['cache.prefix' => 'app:'.$e->current]);
+    Cache::forgetDriver();
+});
+```
+
+## Проброс в очередь (v3.1)
+
+Включите `schemify.queue.propagate` (env `SCHEMIFY_QUEUE_PROPAGATE=true`) — job,
+поставленный при активном слое, понесёт его в payload; воркер переключится на
+этот слой перед выполнением и восстановит прежнее состояние после (безопасно и
+для `sync`-драйвера). Job, чей слой уже удалён, падает с ошибкой — осознанно.
+
 ## Примечания
 
 - `switchTo()` переконфигурирует единственное общее соединение

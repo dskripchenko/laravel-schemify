@@ -3,12 +3,14 @@
 namespace Dskripchenko\Schemify\Console\Commands;
 
 use Dskripchenko\Schemify\Models\LayerItem;
-use Dskripchenko\Schemify\Support\SchemaName;
+use Dskripchenko\Schemify\Support\SchemifyManager;
 use Illuminate\Console\Command;
+use InvalidArgumentException;
 
 /**
  * `layers:delete` — remove a layer from the registry. With --drop-schema it
- * also DROPs the PostgreSQL schema (destructive, CASCADE).
+ * also DROPs the PostgreSQL schema (destructive, CASCADE). Thin console
+ * wrapper around {@see SchemifyManager::deprovision()}.
  */
 class DeleteLayerCommand extends Command
 {
@@ -19,20 +21,19 @@ class DeleteLayerCommand extends Command
 
     protected $description = 'Delete a Schemify layer (optionally dropping its schema)';
 
-    public function handle(): int
+    public function handle(SchemifyManager $schemify): int
     {
         $name = (string) $this->argument('name');
-
-        $layer = LayerItem::query()->where('name', $name)->first();
-        if (! $layer) {
-            $this->error("Layer '{$name}' not found.");
-
-            return self::FAILURE;
-        }
-
         $dropSchema = (bool) $this->option('drop-schema');
 
         if (! $this->option('force')) {
+            $layer = LayerItem::query()->where('name', $name)->first();
+            if (! $layer) {
+                $this->error("Layer '{$name}' not found.");
+
+                return self::FAILURE;
+            }
+
             $what = $dropSchema
                 ? "layer '{$name}' AND drop schema '{$layer->schema_name}' (all data lost)"
                 : "layer '{$name}' (schema kept)";
@@ -43,16 +44,17 @@ class DeleteLayerCommand extends Command
             }
         }
 
-        if ($dropSchema) {
-            $connection = app('schemify')->switchTo($name);
-            $connection->unprepared('DROP SCHEMA IF EXISTS '.SchemaName::quote($layer->schema_name).' CASCADE;');
-            app('schemify')->forget();
-            $this->info("Dropped schema '{$layer->schema_name}'.");
+        try {
+            $schemify->deprovision($name, $dropSchema);
+        } catch (InvalidArgumentException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         }
 
-        // Hard delete so the unique name is freed for reuse.
-        $layer->forceDelete();
-
+        if ($dropSchema) {
+            $this->info("Dropped schema of layer '{$name}'.");
+        }
         $this->info("Layer '{$name}' deleted.");
 
         return self::SUCCESS;

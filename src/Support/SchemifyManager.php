@@ -3,8 +3,12 @@
 namespace Dskripchenko\Schemify\Support;
 
 use Closure;
+use Dskripchenko\Schemify\Events\LayerForgotten;
+use Dskripchenko\Schemify\Events\LayerSwitched;
+use Dskripchenko\Schemify\Models\DbConnection;
 use Dskripchenko\Schemify\Models\LayerItem;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -15,6 +19,9 @@ use InvalidArgumentException;
  * DynamicConnectionTrait) can resolve the right schema without re-reading the
  * --layer console option. Switching reconfigures the shared layer connection
  * once; ConnectionHelper::needToReconnect() avoids redundant reconnects.
+ *
+ * Emits {@see LayerSwitched} / {@see LayerForgotten} so applications can
+ * re-scope layer-dependent infrastructure (cache prefixes, storage paths).
  */
 class SchemifyManager
 {
@@ -50,8 +57,11 @@ class SchemifyManager
             throw new InvalidArgumentException("Layer '{$name}' not found.");
         }
 
+        $previous = $this->current;
         $connection = $layerItem->refreshConnection();
         $this->current = $name;
+
+        event(new LayerSwitched($previous, $name));
 
         return $connection;
     }
@@ -85,7 +95,117 @@ class SchemifyManager
      */
     public function forget(): void
     {
+        $previous = $this->current;
         $this->current = null;
         DB::purge($this->connectionName());
+
+        event(new LayerForgotten($previous));
+    }
+
+    /**
+     * Register a new layer and create its PostgreSQL schema. Programmatic
+     * equivalent of `layers:new` — usable from HTTP controllers / services.
+     *
+     * The previously active layer (if any) is preserved.
+     *
+     * @param  string  $name  unique layer name
+     * @param  string|null  $schema  schema name (defaults to the layer name)
+     * @param  string|null  $group  layer group/type tag (defaults to the layer name)
+     * @param  int|null  $connectionId  reuse an existing db_connections id instead of cloning the default connection
+     * @param  bool  $migrate  run tenant migrations against the new layer right away
+     *
+     * @throws InvalidArgumentException on duplicate name, unknown connection id or unsafe schema name.
+     */
+    public function provision(
+        string $name,
+        ?string $schema = null,
+        ?string $group = null,
+        ?int $connectionId = null,
+        bool $migrate = false,
+    ): LayerItem {
+        $schema = SchemaName::assertValid($schema ?? $name);
+
+        if (LayerItem::query()->where('name', $name)->exists()) {
+            throw new InvalidArgumentException("Layer '{$name}' already exists.");
+        }
+
+        if ($connectionId !== null) {
+            $connection = DbConnection::query()->find($connectionId);
+            if (! $connection) {
+                throw new InvalidArgumentException("db_connection #{$connectionId} not found.");
+            }
+        } else {
+            $connection = $this->cloneDefaultConnection();
+        }
+
+        $layer = new LayerItem;
+        $layer->fill([
+            'layer' => $group ?? $name,
+            'name' => $name,
+            'schema_name' => $schema,
+            'db_connection_id' => $connection->id,
+        ])->save();
+
+        // Switching runs CREATE SCHEMA IF NOT EXISTS; use() restores whatever
+        // layer was active before provisioning.
+        $this->use($name, static fn () => null);
+
+        if ($migrate) {
+            Artisan::call('migrate', ['--layer' => $name, '--force' => true]);
+        }
+
+        return $layer;
+    }
+
+    /**
+     * Remove a layer from the registry. With $dropSchema the PostgreSQL
+     * schema (and everything in it) is dropped — destructive.
+     *
+     * @throws InvalidArgumentException when the layer does not exist.
+     */
+    public function deprovision(string $name, bool $dropSchema = false): void
+    {
+        $layer = LayerItem::query()->where('name', $name)->first();
+
+        if (! $layer) {
+            throw new InvalidArgumentException("Layer '{$name}' not found.");
+        }
+
+        // Never "restore" onto the layer being removed.
+        if ($this->current === $name) {
+            $this->forget();
+        }
+
+        if ($dropSchema) {
+            $connectionName = $this->connectionName();
+            $this->use($name, static function () use ($connectionName, $layer): void {
+                DB::connection($connectionName)
+                    ->unprepared('DROP SCHEMA IF EXISTS '.SchemaName::quote($layer->schema_name).' CASCADE;');
+            });
+        }
+
+        // Hard delete so the unique name is freed for reuse.
+        $layer->forceDelete();
+    }
+
+    /**
+     * Clone the app's default DB config into a new connection record.
+     */
+    protected function cloneDefaultConnection(): DbConnection
+    {
+        $default = config('database.default');
+        $cfg = config("database.connections.{$default}", []);
+
+        $connection = new DbConnection;
+        $connection->fill([
+            'driver' => $cfg['driver'] ?? 'pgsql',
+            'host' => $cfg['host'] ?? '127.0.0.1',
+            'port' => (string) ($cfg['port'] ?? 5432),
+            'database' => $cfg['database'] ?? '',
+            'username' => $cfg['username'] ?? '',
+            'password' => $cfg['password'] ?? '',
+        ])->save();
+
+        return $connection;
     }
 }

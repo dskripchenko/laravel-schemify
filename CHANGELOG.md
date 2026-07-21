@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.1.0
+
+Runtime additions for host applications that manage layers from code (driven by
+the first real consumer — a multi-tenant service).
+
+### Added
+- **Programmatic provisioning** — `Schemify::provision(name, schema?, group?,
+  connectionId?, migrate?)` and `Schemify::deprovision(name, dropSchema?)`;
+  `layers:new` / `layers:delete` are now thin wrappers around the manager.
+  Provisioning preserves the previously active layer; deprovisioning the
+  current layer forgets it first (never "restores" onto a dropped schema).
+- **Events** — `Events\LayerSwitched(previous, current)` after every
+  `switchTo()` and `Events\LayerForgotten(previous)` after `forget()` — hook
+  points for per-layer cache/storage scoping.
+- **Queue propagation (opt-in)** — with `schemify.queue.propagate` enabled,
+  jobs dispatched while a layer is active carry it in their payload; workers
+  switch to it before the job and restore the previous state afterwards
+  (`sync`-driver safe; a job whose layer is gone fails loudly).
+
+### Docs
+- New runtime sections (provisioning / events / queue) in all four languages.
+
 ## 3.0.0
 
 First modernized, stable release. Supported versions: **PHP 8.2–8.5**,

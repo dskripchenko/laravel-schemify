@@ -68,6 +68,48 @@ Schemify::use('acme', function () {
 Report::count();             // uses getLayerItemName() → 'main'
 ```
 
+## Provisioning layers at runtime (v3.1)
+
+`layers:new` / `layers:delete` are thin wrappers around the manager — the same
+operations are available programmatically (e.g. from an admin controller):
+
+```php
+use Dskripchenko\Schemify\Facades\Schemify;
+
+$layer = Schemify::provision('acme', schema: 'acme', group: 'workspace', migrate: true);
+Schemify::deprovision('acme', dropSchema: true);
+```
+
+`provision()` validates the schema name, registers the layer (cloning the
+default DB connection unless `connectionId` is given), creates the schema and —
+with `migrate: true` — runs the tenant migration set. The previously active
+layer is preserved. Both methods throw `InvalidArgumentException` on bad input.
+
+## Events (v3.1)
+
+- `Dskripchenko\Schemify\Events\LayerSwitched` — after every `switchTo()`
+  (`previous`, `current`).
+- `Dskripchenko\Schemify\Events\LayerForgotten` — after `forget()`
+  (`previous`).
+
+Use them to re-scope layer-dependent infrastructure, e.g. a per-layer cache
+prefix:
+
+```php
+Event::listen(LayerSwitched::class, function (LayerSwitched $e) {
+    config(['cache.prefix' => 'app:'.$e->current]);
+    Cache::forgetDriver();
+});
+```
+
+## Queue propagation (v3.1)
+
+Enable `schemify.queue.propagate` (env `SCHEMIFY_QUEUE_PROPAGATE=true`) and
+jobs dispatched while a layer is active will carry it in their payload; a
+worker switches to that layer before running the job and restores the previous
+state afterwards (safe for the `sync` driver too). A job whose layer no longer
+exists fails loudly — by design.
+
 ## Notes
 
 - `switchTo()` reconfigures a single shared connection (`schemify.connection`).

@@ -69,6 +69,48 @@ Schemify::use('acme', function () {
 Report::count();             // uses getLayerItemName() → 'main'
 ```
 
+## Layer-Provisionierung zur Laufzeit (v3.1)
+
+`layers:new` / `layers:delete` sind dünne Wrapper um den Manager — dieselben
+Operationen stehen programmatisch zur Verfügung (z. B. aus einem Admin-Controller):
+
+```php
+use Dskripchenko\Schemify\Facades\Schemify;
+
+$layer = Schemify::provision('acme', schema: 'acme', group: 'workspace', migrate: true);
+Schemify::deprovision('acme', dropSchema: true);
+```
+
+`provision()` validiert den Schema-Namen, registriert den Layer (kloniert die
+Default-Verbindung, sofern keine `connectionId` übergeben wird), erstellt das
+Schema und führt mit `migrate: true` die Tenant-Migrationen aus. Der zuvor
+aktive Layer bleibt erhalten. Beide Methoden werfen bei ungültiger Eingabe eine
+`InvalidArgumentException`.
+
+## Events (v3.1)
+
+- `Dskripchenko\Schemify\Events\LayerSwitched` — nach jedem `switchTo()`
+  (`previous`, `current`).
+- `Dskripchenko\Schemify\Events\LayerForgotten` — nach `forget()` (`previous`).
+
+Damit lässt sich layer-abhängige Infrastruktur neu scopen, z. B. ein
+Cache-Präfix pro Layer:
+
+```php
+Event::listen(LayerSwitched::class, function (LayerSwitched $e) {
+    config(['cache.prefix' => 'app:'.$e->current]);
+    Cache::forgetDriver();
+});
+```
+
+## Queue-Propagation (v3.1)
+
+Mit aktiviertem `schemify.queue.propagate` (env `SCHEMIFY_QUEUE_PROPAGATE=true`)
+tragen Jobs, die bei aktivem Layer dispatcht werden, diesen im Payload; der
+Worker wechselt vor der Ausführung auf den Layer und stellt danach den vorigen
+Zustand wieder her (auch mit dem `sync`-Driver sicher). Ein Job, dessen Layer
+nicht mehr existiert, schlägt bewusst laut fehl.
+
 ## Hinweise
 
 - `switchTo()` konfiguriert eine einzige gemeinsame Verbindung neu

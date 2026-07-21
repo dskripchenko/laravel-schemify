@@ -11,6 +11,7 @@ use Dskripchenko\Schemify\Console\Commands\NewLayerCommand;
 use Dskripchenko\Schemify\Console\Commands\PackagePostInstall;
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Models\LayerItem;
+use Dskripchenko\Schemify\Queue\LayerPropagator;
 use Dskripchenko\Schemify\Support\SchemifyManager;
 
 /**
@@ -28,6 +29,11 @@ class SchemifyServiceProvider extends BaseServiceProvider
             $this->publishes([
                 dirname(__DIR__, 2).'/database/migrations/001_create_core_tables_struct.php' => database_path('migrations/2020_01_01_000000_create_schemify_core_tables.php'),
             ], 'schemify-migrations');
+        }
+
+        // Проброс активного слоя в queued jobs (opt-in)
+        if (config('schemify.queue.propagate')) {
+            LayerPropagator::register();
         }
 
         // Регистрируем команды
