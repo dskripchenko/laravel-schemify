@@ -2,41 +2,66 @@
 
 namespace Dskripchenko\Schemify\Console\Commands;
 
+use Dskripchenko\Schemify\Models\LayerItem;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 /**
- * Class Automigrate
+ * `layers:migrate` — применяет tenant-миграции ко всем слоям из реестра
+ * `layer_items` (v3.3: registry-driven; конфиговый `layersStruct` больше не
+ * используется). Ставится в деплой после центрального `migrate`.
  */
 class MigrateCommand extends Command
 {
-    protected $name = 'layers:migrate';
+    protected $signature = 'layers:migrate
+        {--group= : Только слои этой группы (layer_items.layer)}
+        {--force : Прокинуть --force в migrate (production)}';
 
-    protected $description = 'Применение миграций по всем слоям';
+    protected $description = 'Применение tenant-миграций ко всем зарегистрированным слоям';
 
-    public function handle()
+    public function handle(): int
     {
-        $this->applyMigrations();
-    }
+        if (! Schema::hasTable((new LayerItem)->getTable())) {
+            $this->warn('Таблица layer_items отсутствует — реестр слоёв ещё не установлен, пропуск.');
 
-    protected function applyMigrations(): void
-    {
-        $closure = function ($layers = []) use (&$closure) {
-            if (! is_array($layers)) {
-                return;
+            return self::SUCCESS;
+        }
+
+        $query = LayerItem::query()->orderBy('id');
+        if (is_string($group = $this->option('group')) && $group !== '') {
+            $query->where('layer', $group);
+        }
+
+        $names = $query->pluck('name');
+        if ($names->isEmpty()) {
+            $this->info('Зарегистрированных слоёв нет — нечего мигрировать.');
+
+            return self::SUCCESS;
+        }
+
+        $failed = 0;
+        foreach ($names as $name) {
+            $this->line("→ migrate --layer={$name}");
+            $code = Artisan::call('migrate', array_filter([
+                '--layer' => $name,
+                '--force' => (bool) $this->option('force'),
+            ]));
+            $this->output->write(Artisan::output());
+            if ($code !== 0) {
+                $this->error("  слой {$name}: exit {$code}");
+                $failed++;
             }
+        }
 
-            foreach ($layers as $layer => $value) {
-                // пропускаем все выключенные в конфиге слои
-                if (! $value) {
-                    continue;
-                }
+        if ($failed > 0) {
+            $this->error("Слоёв с ошибками: {$failed}");
 
-                Artisan::call('migrate', ['--layer' => $layer]);
-                $closure($value);
-            }
-        };
-        $layers = config('database.layersStruct', []);
-        $closure($layers);
+            return self::FAILURE;
+        }
+
+        $this->info('Все слои мигрированы ('.$names->count().').');
+
+        return self::SUCCESS;
     }
 }

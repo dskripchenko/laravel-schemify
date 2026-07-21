@@ -22,6 +22,14 @@ class ConnectionHelper
         $connectionName = config('database.layer');
         $connection = config("database.connections.{$connectionName}", []);
         $newConnection = array_merge_deep($connection, $options);
+
+        // Laravel-коннектор pgsql предпочитает `search_path` ключу `schema`:
+        // если шаблон подключения задаёт search_path, merge одной только
+        // `schema` молча НЕ переключил бы схему (isolation breach). Зеркалим.
+        if (isset($options['schema'])) {
+            $newConnection['search_path'] = $options['schema'];
+        }
+
         config(["database.connections.{$connectionName}" => $newConnection]);
     }
 
@@ -32,6 +40,10 @@ class ConnectionHelper
     {
         $connectionName = config('database.layer');
         $connection = config("database.connections.{$connectionName}", []);
+
+        if (isset($options['schema']) && ($connection['search_path'] ?? null) !== $options['schema']) {
+            return true;
+        }
 
         return ! empty(array_diff_assoc($options, $connection));
     }

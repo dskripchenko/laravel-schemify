@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.3.0
+
+### Fixed (isolation)
+- **`search_path` template override could silently break schema switching.**
+  The pgsql connector prefers `search_path` over `schema`; if the host app's
+  layer-connection template defined `search_path`, Schemify's per-layer
+  `schema` merge was ignored and every "switched" query landed in `public`.
+  `prepareConnection()` now mirrors the layer schema into `search_path`
+  (and `needToReconnect()` accounts for it).
+
+### Changed
+- **`layers:migrate` is registry-driven**: iterates layers registered in
+  `layer_items` (optionally `--group=`) instead of the legacy config
+  `database.layersStruct`; `--force` is passed through to each per-layer
+  `migrate`. Intended as the deploy step after the central `migrate`.
+
 ## 3.2.0
 
 Integration fixes driven by the first host application. Behavioural — review
