@@ -7,6 +7,7 @@ use Dskripchenko\Schemify\Events\LayerForgotten;
 use Dskripchenko\Schemify\Events\LayerSwitched;
 use Dskripchenko\Schemify\Models\DbConnection;
 use Dskripchenko\Schemify\Models\LayerItem;
+use Dskripchenko\Schemify\Services\ConnectionHelper;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -182,6 +183,10 @@ class SchemifyManager
                 DB::connection($connectionName)
                     ->unprepared('DROP SCHEMA IF EXISTS '.SchemaName::quote($layer->schema_name).' CASCADE;');
             });
+
+            // Схемы больше нет — снимаем подтверждение, иначе процесс продолжит
+            // считать её существующей и перестанет её создавать.
+            ConnectionHelper::forgetEnsuredSchemas($layer->schema_name);
         }
 
         // Hard delete so the unique name is freed for reuse.
