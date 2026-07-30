@@ -17,10 +17,27 @@ class ConnectionHelper
     /**
      * @param  array  $options
      */
+    /**
+     * Исходный `search_path` подключения слоя, до первой подмены.
+     *
+     * @var array<string, string|null>
+     */
+    protected static array $pristineSearchPath = [];
+
+    /**
+     * @param  array  $options
+     */
     public static function prepareConnection($options = [])
     {
         $connectionName = config('database.layer');
         $connection = config("database.connections.{$connectionName}", []);
+
+        // Запоминаем, куда возвращаться: шаблон подключения задаёт исходный
+        // путь, и после работы со слоем соединение должно вернуться именно к
+        // нему, а не к произвольной схеме.
+        if (! array_key_exists($connectionName, static::$pristineSearchPath)) {
+            static::$pristineSearchPath[$connectionName] = $connection['search_path'] ?? ($connection['schema'] ?? null);
+        }
         $newConnection = array_merge_deep($connection, $options);
 
         // Laravel-коннектор pgsql предпочитает `search_path` ключу `schema`:
@@ -165,6 +182,47 @@ class ConnectionHelper
         static::$ensured[$key] = true;
 
         return $connection;
+    }
+
+    /**
+     * Вернуть подключение слоя к исходной схеме, не разрывая его.
+     *
+     * `forget()` раньше делал `DB::purge()`, то есть уничтожал соединение. Из-за
+     * этого следующее переключение всегда подключалось заново, и экономия от
+     * `SET search_path` не наступала нигде: воркер очереди открывал соединение
+     * на каждую задачу.
+     *
+     * Соединение сохраняется только если сервер и база не менялись — иначе
+     * возвращаем false, и вызывающий обязан сделать полный purge.
+     */
+    public static function restoreDefaultSchema(): bool
+    {
+        $connectionName = (string) config('database.layer');
+
+        if (! static::isConnected($connectionName)) {
+            return true;   // разрывать нечего
+        }
+
+        if (! array_key_exists($connectionName, static::$pristineSearchPath)) {
+            return true;   // схему никто не подменял
+        }
+
+        $pristine = static::$pristineSearchPath[$connectionName];
+        $connection = config("database.connections.{$connectionName}", []);
+
+        $target = $pristine ?? 'public';
+        if (! SchemaName::isValid((string) $target)) {
+            return false;  // нестандартный путь (список схем) — безопаснее разорвать
+        }
+
+        $connection['search_path'] = $target;
+        $connection['schema'] = $target;
+        config(["database.connections.{$connectionName}" => $connection]);
+
+        DB::connection($connectionName)
+            ->unprepared('SET search_path TO '.SchemaName::quote((string) $target).';');
+
+        return true;
     }
 
     /**

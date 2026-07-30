@@ -89,6 +89,39 @@ class ConnectionReuseTest extends IntegrationTestCase
         );
     }
 
+    public function test_forget_returns_to_the_default_schema_without_dropping_the_connection(): void
+    {
+        // Ради экономии соединения нельзя оставлять путь на чужой схеме:
+        // код, который возьмёт подключение слоя без переключения, обязан
+        // видеть исходную схему, а не данные последнего клиента.
+        $this->artisan('layers:new', ['name' => 'tenant_reuse_i', '--force' => true])->assertSuccessful();
+
+        $connection = $this->layerConnectionName();
+
+        Schemify::switchTo('tenant_reuse_i');
+        DB::connection($connection)->unprepared('CREATE TABLE leak_probe (marker text)');
+        DB::connection($connection)->table('leak_probe')->insert(['marker' => 'клиентские данные']);
+
+        $pdoBefore = DB::connection($connection)->getPdo();
+        Schemify::forget();
+
+        $this->assertNull(Schemify::current());
+        $this->assertSame(
+            $pdoBefore,
+            DB::connection($connection)->getPdo(),
+            'forget не должен разрывать соединение',
+        );
+
+        // Таблицы клиента больше не видно: путь вернулся к исходному.
+        $visible = DB::connection($connection)
+            ->table('information_schema.tables')
+            ->where('table_name', 'leak_probe')
+            ->whereRaw('table_schema = current_schema()')
+            ->exists();
+
+        $this->assertFalse($visible, 'после forget подключение не должно видеть схему клиента');
+    }
+
     public function test_forgetting_ensured_schema_lets_it_be_created_again(): void
     {
         // Схему могли удалить из-под процесса — тогда подтверждение обязано

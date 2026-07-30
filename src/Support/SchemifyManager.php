@@ -98,7 +98,14 @@ class SchemifyManager
     {
         $previous = $this->current;
         $this->current = null;
-        DB::purge($this->connectionName());
+
+        // Возвращаем исходную схему, не разрывая соединение: purge заставлял
+        // подключаться заново при следующем переключении, и в воркере очереди
+        // это стоило соединения на каждую задачу. Если вернуть путь нельзя —
+        // рвём, как раньше: остаться на чужой схеме недопустимо.
+        if (! ConnectionHelper::restoreDefaultSchema()) {
+            DB::purge($this->connectionName());
+        }
 
         event(new LayerForgotten($previous));
     }
