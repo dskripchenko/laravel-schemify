@@ -2,27 +2,20 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
+use Dskripchenko\Schemify\Traits\HasLayerOption;
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
 use Illuminate\Database\ConnectionResolver;
 use Illuminate\Database\Console\Migrations\InstallCommand as BaseInstallCommand;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class InstallCommand
  */
 class InstallCommand extends BaseInstallCommand
 {
-    use PathByLayer, RunByLayer;
-
-    protected function getOptions()
-    {
-        return array_merge(parent::getOptions(), [
-            ['layer', null, InputOption::VALUE_OPTIONAL, 'Слой к которому применяется команда.', null],
-        ]);
-    }
+    use HasLayerOption, PathByLayer, RunByLayer;
 
     /**
      * @throws \Exception

@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.4.2] — 2026-08-05
+
+### Fixed
+- **`--layer` was silently missing from half the overridden commands on
+  Laravel 13.21+.** The option was declared through `getOptions()`, which
+  Laravel only calls for commands without a `$signature`. As the framework
+  migrates its own commands to signatures — 13.21 did so for `migrate:fresh`,
+  `migrate:install`, `migrate:status`, `migrate:reset`, `db:seed` and
+  `db:wipe` — the override stopped existing: the command still resolved to
+  this package's class, but `--layer` was gone and passing it aborted the run.
+  The option is now added in `configure()`, which the Symfony constructor
+  always calls, so it no longer depends on how the parent declares its
+  parameters.
+
+- **Schema introspection reported the previous layer after an in-place
+  switch (Laravel 11 and 12).** Since 3.4.0 a layer switch reuses the
+  connection and only issues `SET search_path`, so the connection instance
+  kept the config of the layer before it. Queries were unaffected — they
+  follow the session path — but the Postgres schema builder on Laravel 11/12
+  takes the schema from the connection config, so `Schema::hasTable()`
+  answered about the wrong layer. In practice `migrate:install` found the
+  previous layer's `migrations` table, skipped creating one for the current
+  layer, and the `migrate` that followed failed on the missing table — so
+  `layers:migrate` broke on the second layer onwards. Laravel 13 asks
+  `current_schema()` and was never affected.
+
 ## [3.4.1] — 2026-07-31
 
 ### Performance

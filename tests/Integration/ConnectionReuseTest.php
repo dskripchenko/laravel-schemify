@@ -7,6 +7,7 @@ namespace Dskripchenko\Schemify\Tests\Integration;
 use Dskripchenko\Schemify\Facades\Schemify;
 use Dskripchenko\Schemify\Services\ConnectionHelper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Переключение слоя не должно стоить нового соединения.
@@ -61,6 +62,39 @@ class ConnectionReuseTest extends IntegrationTestCase
 
         Schemify::switchTo('tenant_reuse_c');
         $this->assertSame('c', DB::connection($connection)->table('probe')->value('marker'));
+    }
+
+    public function test_schema_introspection_follows_the_current_layer(): void
+    {
+        // Запросы ходят по search_path, а schema builder Postgres на Laravel
+        // 11/12 берёт схему из конфига подключения. Пока слой переключался
+        // через purge, конфиг пересоздавался вместе с экземпляром; при
+        // переключении на месте он оставался от прошлого слоя, и
+        // `Schema::hasTable()` отвечал про чужую схему. Наружу это вылезало
+        // так: `migrate:install` видел `migrations` предыдущего слоя, не
+        // создавал таблицу для текущего, и `layers:migrate` падал на втором
+        // слое.
+        $this->artisan('layers:new', ['name' => 'tenant_probe_a', '--force' => true])->assertSuccessful();
+        $this->artisan('layers:new', ['name' => 'tenant_probe_b', '--force' => true])->assertSuccessful();
+
+        $connection = $this->layerConnectionName();
+
+        Schemify::switchTo('tenant_probe_a');
+        DB::connection($connection)->unprepared('CREATE TABLE only_in_a (id int)');
+
+        Schemify::switchTo('tenant_probe_b');
+
+        $this->assertFalse(
+            Schema::connection($connection)->hasTable('only_in_a'),
+            'интроспекция обязана смотреть в текущий слой, а не в предыдущий',
+        );
+
+        Schemify::switchTo('tenant_probe_a');
+
+        $this->assertTrue(
+            Schema::connection($connection)->hasTable('only_in_a'),
+            'вернувшись в слой, интроспекция обязана снова видеть его таблицы',
+        );
     }
 
     public function test_schema_is_created_once_per_process(): void

@@ -127,12 +127,6 @@ parameters:
 			path: src/Models/LayerItem.php
 
 		-
-			message: '#^PHPDoc type array of property Dskripchenko\\Schemify\\Providers\\ConsoleSupportServiceProvider\:\:\$providers is not covariant with PHPDoc type array\<string\> of overridden property Illuminate\\Foundation\\Providers\\ConsoleSupportServiceProvider\:\:\$providers\.$#'
-			identifier: property.phpDocType
-			count: 1
-			path: src/Providers/ConsoleSupportServiceProvider.php
-
-		-
 			message: '#^Trait Dskripchenko\\Schemify\\Traits\\DynamicConnectionTrait is used zero times and is not analysed\.$#'
 			identifier: trait.unused
 			count: 1

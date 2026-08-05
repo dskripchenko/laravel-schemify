@@ -2,6 +2,7 @@
 
 namespace Dskripchenko\Schemify\Services;
 
+use Closure;
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Support\SchemaName;
 use Illuminate\Database\Connection;
@@ -94,6 +95,7 @@ class ConnectionHelper
             static::prepareConnection($options);
             $connection = DB::connection($connectionName);
             $connection->unprepared('SET search_path TO '.SchemaName::quote((string) $schema).';');
+            static::syncConnectionSchema($connection, (string) $schema);
 
             return $connector
                 ? $connector->getPreparedConnection($connection, $schema)
@@ -219,10 +221,39 @@ class ConnectionHelper
         $connection['schema'] = $target;
         config(["database.connections.{$connectionName}" => $connection]);
 
-        DB::connection($connectionName)
-            ->unprepared('SET search_path TO '.SchemaName::quote((string) $target).';');
+        $live = DB::connection($connectionName);
+        $live->unprepared('SET search_path TO '.SchemaName::quote((string) $target).';');
+        static::syncConnectionSchema($live, (string) $target);
 
         return true;
+    }
+
+    /**
+     * Привести конфиг живого подключения в соответствие с новой схемой.
+     *
+     * Пока слой переключался через `purge`, экземпляр подключения создавался
+     * заново — вместе с конфигом. При переключении через `SET search_path`
+     * экземпляр остаётся прежним, а его конфиг помнит прошлую схему. На
+     * запросах это не видно (они идут по search_path), а вот schema builder
+     * Postgres на Laravel 11/12 берёт схему именно из конфига подключения:
+     * `Schema::hasTable()` отвечал про прошлый слой. Наружу это вылезало так,
+     * что `migrate:install` находил таблицу `migrations` предыдущего слоя и не
+     * создавал её для текущего, а следующий за ним `migrate` падал на её
+     * отсутствии (Laravel 13 спрашивает `current_schema()` и не страдал).
+     *
+     * Публичного сеттера у `Connection` нет ни в одной поддерживаемой версии,
+     * поэтому конфиг правится замыканием, привязанным к экземпляру.
+     */
+    protected static function syncConnectionSchema(ConnectionInterface $connection, string $schema): void
+    {
+        if (! $connection instanceof Connection) {
+            return;
+        }
+
+        Closure::bind(function () use ($schema): void {
+            $this->config['schema'] = $schema;
+            $this->config['search_path'] = $schema;
+        }, $connection, Connection::class)();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Dskripchenko\Schemify\Console\Migrations;
 
+use Dskripchenko\Schemify\Traits\HasLayerOption;
 use Dskripchenko\Schemify\Traits\PathByLayer;
 use Dskripchenko\Schemify\Traits\RunByLayer;
 use Illuminate\Database\Console\Migrations\MigrateMakeCommand as BaseMigrateMakeCommand;
@@ -11,7 +12,7 @@ use Illuminate\Database\Console\Migrations\MigrateMakeCommand as BaseMigrateMake
  */
 class MigrateMakeCommand extends BaseMigrateMakeCommand
 {
-    use PathByLayer, RunByLayer;
+    use HasLayerOption, PathByLayer, RunByLayer;
 
     /**
      * The console command signature.
@@ -23,6 +24,5 @@ class MigrateMakeCommand extends BaseMigrateMakeCommand
         {--table= : The table to migrate}
         {--path= : The location where the migration file should be created}
         {--realpath : Indicate any provided migration file paths are pre-resolved absolute paths}
-        {--fullpath : Output the full path of the migration}
-        {--layer= : Слой к которому применяется команда.}';
+        {--fullpath : Output the full path of the migration}';
 }
