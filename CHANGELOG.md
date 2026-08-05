@@ -1,40 +1,42 @@
 # Changelog
 
-## 3.4.1
+## [3.4.1] — 2026-07-31
 
 ### Performance
-- **`forget()` больше не разрывает соединение.** Он делал `DB::purge()`, и из-за
-  этого экономия 3.4.0 не наступала нигде: следующее переключение всё равно
-  подключалось заново. Воркер очереди открывал соединение на каждую задачу.
+- **`forget()` no longer drops the connection.** It called `DB::purge()`, and
+  because of that the saving introduced in 3.4.0 never materialized anywhere:
+  the next switch reconnected regardless. A queue worker opened a connection
+  for every job.
 
-  Теперь подключение возвращается к исходной схеме через `SET search_path`, а
-  рвётся только если вернуться нельзя (нестандартный путь из нескольких схем).
-  Оставаться на схеме клиента после `forget()` недопустимо, поэтому это
-  проверяется тестом: код, взявший подключение слоя без переключения, не должен
-  видеть таблицы последнего клиента.
+  The connection is now returned to its original schema through
+  `SET search_path`, and is torn down only when returning is impossible (a
+  non-standard path spanning several schemas). Staying on a tenant's schema
+  after `forget()` is unacceptable, so a test guards it: code that takes the
+  layer connection without switching must not see the last tenant's tables.
 
-## 3.4.0
+## [3.4.0] — 2026-07-31
 
 ### Performance
-- **Смена слоя больше не пересоздаёт соединение.** `reconnect()` делал
-  `DB::purge()` и подключался заново на каждом переключении — новый TCP и новая
-  аутентификация. Когда слой меняется на каждом HTTP-запросе, это заметно:
-  профилирование приложения-потребителя показало **12% времени запроса** на
-  установку соединений и **два соединения к Postgres на запрос**.
+- **Switching a layer no longer recreates the connection.** `reconnect()`
+  called `DB::purge()` and connected anew on every switch — a fresh TCP
+  connection and a fresh authentication. When the layer changes on every HTTP
+  request that shows: profiling of a consuming application attributed **12% of
+  request time** to establishing connections, and **two Postgres connections
+  per request**.
 
-  Теперь, если изменилась только схема и соединение уже установлено,
-  выполняется `SET search_path`. Полное переподключение остаётся там, где оно
-  действительно нужно — когда слой живёт на другом сервере (`db_connections`).
+  Now, when only the schema changed and the connection is already established,
+  a `SET search_path` is issued. A full reconnect remains where it is genuinely
+  needed — when the layer lives on another server (`db_connections`).
 
-  Изоляция не ослабевает: `search_path` выставляется в одну схему, без
-  `public`, ровно как при подключении заново. Покрыто тестом, который пишет
-  одноимённые таблицы в двух слоях и читает их через одно соединение.
+  Isolation is not weakened: `search_path` is set to a single schema, without
+  `public`, exactly as on a fresh connection. Covered by a test that writes
+  identically named tables in two layers and reads them through one connection.
 
-- **`CREATE SCHEMA IF NOT EXISTS` не повторяется на каждом переключении.**
-  Это DDL, он берёт блокировку, а схема создаётся при провижининге слоя.
-  Подтверждённое существование запоминается на процесс;
-  `ConnectionHelper::forgetEnsuredSchemas()` сбрасывает подтверждение и
-  вызывается при удалении слоя.
+- **`CREATE SCHEMA IF NOT EXISTS` is no longer repeated on every switch.** It
+  is DDL, it takes a lock, and the schema is created when the layer is
+  provisioned. A confirmed existence is remembered per process;
+  `ConnectionHelper::forgetEnsuredSchemas()` clears the confirmation and is
+  called when a layer is removed.
 
 ## 3.3.0
 
