@@ -1,6 +1,6 @@
 # dskripchenko/laravel-schemify
 
-> 🌐 [English](../README.md) · [Русский](README.ru.md) · **Deutsch** · [中文](README.zh.md)
+> 🌐 [English](../../README.md) · [Русский](../ru/README.md) · **Deutsch** · [中文](../zh/README.md)
 
 Dynamische **Multi-Schema-PostgreSQL**-Verbindungen für Laravel. Schemify bildet
 jedes PostgreSQL-Schema als *Layer* ab (eine `layer_items`-Zeile, die auf eine
@@ -12,7 +12,7 @@ unterschiedlichen Datenbanken.
 
 [![Packagist](https://img.shields.io/packagist/v/dskripchenko/laravel-schemify)](https://packagist.org/packages/dskripchenko/laravel-schemify)
 [![Tests](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml/badge.svg)](https://github.com/dskripchenko/laravel-schemify/actions/workflows/tests.yml)
-[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](../LICENSE.md)
+[![License](https://img.shields.io/packagist/l/dskripchenko/laravel-schemify)](../../LICENSE.md)
 
 > Schemify ist ein leichtgewichtiger Schema-/Verbindungs-Umschalter, der in die
 > Migrationsbefehle eingebunden ist — **kein** vollständiges Tenancy-Framework.
@@ -57,15 +57,15 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 
 ## Dokumentation
 
-- [Erste Schritte](de/getting-started.md)
-- [Befehle](de/commands.md)
-- [Layer-Umschaltung zur Laufzeit](de/runtime.md)
-- [Migrationen](de/migrations.md)
-- [Sicherheit](de/security.md)
+- [Erste Schritte](getting-started.md)
+- [Befehle](commands.md)
+- [Layer-Umschaltung zur Laufzeit](runtime.md)
+- [Migrationen](migrations.md)
+- [Sicherheit](security.md)
 
-Du steigst von 2.x um? Siehe [UPGRADE.md](UPGRADE.md) und das
-[CHANGELOG](../CHANGELOG.md).
+Du steigst von 2.x um? Siehe [UPGRADE.md](../UPGRADE.md) und das
+[CHANGELOG](../../CHANGELOG.md).
 
 ## Lizenz
 
-[MIT](../LICENSE.md) © Denis Skripchenko
+[MIT](../../LICENSE.md) © Denis Skripchenko

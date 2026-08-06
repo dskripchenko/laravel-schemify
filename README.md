@@ -1,6 +1,6 @@
 # dskripchenko/laravel-schemify
 
-> 🌐 **English** · [Русский](docs/README.ru.md) · [Deutsch](docs/README.de.md) · [中文](docs/README.zh.md)
+> 🌐 **English** · [Русский](docs/ru/README.md) · [Deutsch](docs/de/README.md) · [中文](docs/zh/README.md)
 
 Dynamic **multi-schema PostgreSQL** connections for Laravel. Schemify models
 each PostgreSQL schema as a *layer* (a `layer_items` row pointing at a
