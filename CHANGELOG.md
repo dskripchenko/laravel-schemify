@@ -175,3 +175,14 @@ First modernized, stable release. Supported versions: **PHP 8.2–8.5**,
 ### Tooling
 - PHPUnit, PHPStan (level 5 + baseline), Pint, `.gitignore`/`.gitattributes`,
   GitHub Actions matrix (PHP 8.2–8.5 × Laravel 11/12/13, EOL-L11 carve-out).
+
+## [2.0.0] - 2021-04-05
+
+### Changed
+- Second generation of the package: the layer registry and the migration
+  pipeline were rebuilt.
+
+## [1.0.0] - 2020-12-09
+
+### Added
+- First release: schema-per-layer multitenancy for Laravel.
