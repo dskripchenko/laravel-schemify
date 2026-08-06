@@ -63,7 +63,7 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 - [Migrationen](migrations.md)
 - [Sicherheit](security.md)
 
-Du steigst von 2.x um? Siehe [UPGRADE.md](../UPGRADE.md) und das
+Du steigst von 2.x um? Siehe [UPGRADE.md](upgrade.md) und das
 [CHANGELOG](../../CHANGELOG.md).
 
 ## Lizenz

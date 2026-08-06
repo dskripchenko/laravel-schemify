@@ -57,7 +57,7 @@ $total = Schemify::use('acme', fn () => Invoice::sum('amount'));
 - [迁移](migrations.md)
 - [安全](security.md)
 
-从 2.x 升级？请参阅 [UPGRADE.md](../UPGRADE.md) 和 [CHANGELOG](../../CHANGELOG.md)。
+从 2.x 升级？请参阅 [UPGRADE.md](upgrade.md) 和 [CHANGELOG](../../CHANGELOG.md)。
 
 ## 许可证
 
