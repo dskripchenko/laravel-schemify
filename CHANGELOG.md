@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.4.3] — 2026-08-10
+
+### Fixed
+- **A plain `php artisan db:seed --force` aborted with "Undefined array key
+  driver".** Commands overridden by this package route through
+  `RunByLayer`, and on the central-layer path it forwarded the raw
+  `--database` option to its callback. That option is optional, so an
+  invocation without it handed the callback `null` — while every caller in
+  the package treats the argument as a connection *name*
+  (`DB::connection($database)`, `$resolver->setDefaultConnection($database)`,
+  `$migrator->setConnection($database)`). `db:seed` set the default
+  connection to `null`, and Laravel's `DatabaseManager` then failed while
+  reading the config of a connection that does not exist — an error pointing
+  at the framework rather than at the missing option that caused it.
+
+  The default connection is now resolved once, at the boundary, so the
+  callback contract "always a name, never null" holds. Passing `--database`
+  explicitly still wins. Reachable from the plainest invocation the package
+  promises to leave working, so any project seeding the central layer without
+  naming a database was affected.
+
 ## [3.4.2] — 2026-08-05
 
 ### Fixed
