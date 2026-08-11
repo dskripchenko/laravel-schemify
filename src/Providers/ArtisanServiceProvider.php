@@ -38,9 +38,9 @@ class ArtisanServiceProvider extends \Illuminate\Foundation\Providers\ArtisanSer
     {
         parent::register();
 
-        // extend() гарантирует наши override'ы поверх любого более позднего
-        // (deferred) биндинга core-провайдеров; современный console kernel
-        // резолвит по CLASS-абстрактам — расширяем и их, и легаси-строки.
+        // extend() keeps our overrides on top of any later (deferred) binding
+        // from the core providers. The modern console kernel resolves by class
+        // abstracts, so both those and the legacy strings are extended.
         foreach (['command.db.wipe', \Illuminate\Database\Console\WipeCommand::class] as $abstract) {
             $this->app->extend($abstract, fn () => new WipeCommand);
         }

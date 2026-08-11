@@ -47,8 +47,8 @@ trait PathByLayer
     protected function getMigrationPaths()
     {
         if ($this->isCentralLayer()) {
-            // Реплика Migrations\BaseCommand::getMigrationPaths() без parent::
-            // (не у всех host-команд база — Migrations\BaseCommand).
+            // A copy of Migrations\BaseCommand::getMigrationPaths() without
+            // parent:: — not every host command extends that base class.
             return array_merge(
                 app('migrator')->paths(),
                 [$this->getMigrationPath()],

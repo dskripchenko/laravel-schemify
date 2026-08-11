@@ -31,7 +31,7 @@ final class LayerPropagator
 
     public static function register(): void
     {
-        // Идемпотентность в рамках текущего app-инстанса.
+        // Idempotent within the current app instance.
         if (app()->bound('schemify.queue.propagating')) {
             return;
         }

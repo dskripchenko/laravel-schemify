@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * `layers:migrate` — применяет tenant-миграции ко всем слоям из реестра
- * `layer_items` (v3.3: registry-driven; конфиговый `layersStruct` больше не
- * используется). Ставится в деплой после центрального `migrate`.
+ * `layers:migrate` applies tenant migrations to every layer in the
+ * `layer_items` registry (v3.3: registry-driven; the `layersStruct` config is
+ * no longer used). Runs in deployment after the central `migrate`.
  */
 class MigrateCommand extends Command
 {

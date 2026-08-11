@@ -31,49 +31,38 @@ class SchemifyServiceProvider extends BaseServiceProvider
             ], 'schemify-migrations');
         }
 
-        // Проброс активного слоя в queued jobs (opt-in)
         if (config('schemify.queue.propagate')) {
             LayerPropagator::register();
         }
 
-        // Регистрируем команды
         $this->commands([
-            // установка компонента (публикация + центральные миграции + слой main)
             PackagePostInstall::class,
-            // автоприменение миграций по всем включённым слоям
             MigrateCommand::class,
-            // управление слоями
             NewLayerCommand::class,
             ListLayersCommand::class,
             DeleteLayerCommand::class,
-            // расширяем базовую настройку окружения при разворачивании проекта
             ApiInstall::class,
         ]);
     }
 
     public function register()
     {
-        // Конфигурация динамического соединения (мерджится в database.*)
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/database.php', 'database');
 
-        // Настройки пакета
         $this->mergeConfigFrom(dirname(__DIR__, 2).'/config/schemify.php', 'schemify');
 
-        // Регистрируем переопреджеленные команда работы с базой данных и миграциями
         $this->app->register(ConsoleSupportServiceProvider::class);
 
-        // Рантайм-менеджер переключения слоёв
         $this->app->singleton(SchemifyManager::class);
         $this->app->alias(SchemifyManager::class, 'schemify');
 
-        // Регистрируем коннектор который будет переключать динамическое соединение с базой данных
         $this->app->bind(ConnectorInterface::class, LayerItem::class);
         $this->app->bind('layer_item_connector', function ($app) {
             try {
                 return $app->make(ConnectorInterface::class);
             } catch (\Exception $e) {
                 $abstract = ConnectorInterface::class;
-                throw new \Exception("Не установлена реализация {$abstract}.");
+                throw new \Exception("No implementation bound for {$abstract}.");
             }
         });
 

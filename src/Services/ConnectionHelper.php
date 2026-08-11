@@ -19,7 +19,7 @@ class ConnectionHelper
      * @param  array  $options
      */
     /**
-     * Исходный `search_path` подключения слоя, до первой подмены.
+     * The layer connection's original `search_path`, before the first switch.
      *
      * @var array<string, string|null>
      */
@@ -33,17 +33,17 @@ class ConnectionHelper
         $connectionName = config('database.layer');
         $connection = config("database.connections.{$connectionName}", []);
 
-        // Запоминаем, куда возвращаться: шаблон подключения задаёт исходный
-        // путь, и после работы со слоем соединение должно вернуться именно к
-        // нему, а не к произвольной схеме.
+        // Remember where to return: the connection template defines the
+        // original path, and after working with a layer the connection must
+        // return to exactly that, not to some arbitrary schema.
         if (! array_key_exists($connectionName, static::$pristineSearchPath)) {
             static::$pristineSearchPath[$connectionName] = $connection['search_path'] ?? ($connection['schema'] ?? null);
         }
         $newConnection = array_merge_deep($connection, $options);
 
-        // Laravel-коннектор pgsql предпочитает `search_path` ключу `schema`:
-        // если шаблон подключения задаёт search_path, merge одной только
-        // `schema` молча НЕ переключил бы схему (isolation breach). Зеркалим.
+        // Laravel's pgsql connector prefers `search_path` over `schema`: if the
+        // connection template sets search_path, merging `schema` alone would
+        // silently NOT switch the schema — an isolation breach. So mirror both.
         if (isset($options['schema'])) {
             $newConnection['search_path'] = $options['schema'];
         }
@@ -80,17 +80,17 @@ class ConnectionHelper
 
         $schema = Arr::get($options, 'schema');
 
-        // Самый частый случай — сменилась только схема на уже открытом
-        // соединении: так выглядит каждый запрос клиента. Нового соединения он
-        // не требует, достаточно переключить search_path.
+        // The common case is a schema change on an already open connection —
+        // that is what every client request looks like. It needs no new
+        // connection, only a search_path switch.
         //
-        // Раньше здесь всегда шёл purge + новое подключение, то есть новый TCP
-        // и новая аутентификация. В приложении с одним слоем на запрос это
-        // стоило 12% времени каждого HTTP-запроса (профилирование printable,
-        // 2026-07-30), и ровно столько же — каждой задачи очереди.
+        // This used to always purge and reconnect — a new TCP connection and a
+        // fresh authentication. In an application with one layer per request
+        // that cost 12% of every HTTP request (printable profiling, 2026-07-30),
+        // and the same again for every queue job.
         //
-        // Изоляция сохраняется: search_path выставляется в одну схему, без
-        // public, как и при подключении заново.
+        // Isolation is preserved: search_path is set to a single schema, with
+        // no public, exactly as it would be on a fresh connection.
         if ($schema !== null && static::onlySchemaChanged($options) && static::isConnected($connectionName)) {
             static::prepareConnection($options);
             $connection = DB::connection($connectionName);
@@ -114,10 +114,10 @@ class ConnectionHelper
     }
 
     /**
-     * Отличается ли запрошенное подключение от текущего только схемой.
+     * Whether the requested connection differs from the current one only by schema.
      *
-     * Слой может жить на другом сервере (`db_connections`), и тогда сменой
-     * search_path не обойтись — нужно настоящее переподключение.
+     * A layer can live on a different server (`db_connections`), and then a
+     * search_path switch is not enough — a real reconnect is required.
      *
      * @param  array  $options
      */
@@ -136,10 +136,10 @@ class ConnectionHelper
     }
 
     /**
-     * Установлено ли соединение прямо сейчас.
+     * Whether the connection is established right now.
      *
-     * Проверяем именно резолв, а не конфигурацию: на первом переключении в
-     * процессе соединения ещё нет, и переключать search_path не на чем.
+     * This checks resolution rather than configuration: on the first switch in
+     * a process there is no connection yet, so there is nothing to switch.
      */
     protected static function isConnected(string $connectionName): bool
     {
@@ -147,7 +147,7 @@ class ConnectionHelper
     }
 
     /**
-     * Схемы, существование которых уже подтверждено в этом процессе.
+     * Schemas whose existence has already been confirmed in this process.
      *
      * @var array<string, true>
      */
@@ -162,19 +162,19 @@ class ConnectionHelper
             return $connection;
         }
 
-        // Ключ включает и сервер: слои могут жить на разных подключениях
-        // (`db_connections`), и одноимённая схема там — разные схемы.
+        // The key includes the server: layers can live on different connections
+        // (`db_connections`), where a schema of the same name is a different one.
         $key = $connection instanceof Connection
             ? $connection->getName().'/'.$connection->getDatabaseName().'@'.$schema
             : '@'.$schema;
 
-        // `CREATE SCHEMA IF NOT EXISTS` выполнялся на каждом переключении слоя,
-        // то есть на каждом запросе клиента. Это DDL: он берёт блокировку и на
-        // горячем пути не нужен — схема создаётся при провижининге слоя, а
-        // здесь лишь подстраховка на случай, когда её не создали.
+        // `CREATE SCHEMA IF NOT EXISTS` used to run on every layer switch, that
+        // is on every client request. It is DDL: it takes a lock and has no place
+        // on the hot path — the schema is created when the layer is provisioned,
+        // and this is only a safety net for when it was not.
         //
-        // Помним только подтверждённое существование, поэтому худшее, что
-        // может случиться при промахе, — лишний безобидный CREATE.
+        // Only confirmed existence is remembered, so the worst a cache miss can
+        // cost is one harmless extra CREATE.
         if (isset(static::$ensured[$key])) {
             return $connection;
         }
@@ -187,26 +187,26 @@ class ConnectionHelper
     }
 
     /**
-     * Вернуть подключение слоя к исходной схеме, не разрывая его.
+     * Return the layer connection to its original schema without dropping it.
      *
-     * `forget()` раньше делал `DB::purge()`, то есть уничтожал соединение. Из-за
-     * этого следующее переключение всегда подключалось заново, и экономия от
-     * `SET search_path` не наступала нигде: воркер очереди открывал соединение
-     * на каждую задачу.
+     * `forget()` used to call `DB::purge()`, destroying the connection. Because
+     * of that the next switch always reconnected and the saving from
+     * `SET search_path` never materialised anywhere: a queue worker opened a
+     * connection for every job.
      *
-     * Соединение сохраняется только если сервер и база не менялись — иначе
-     * возвращаем false, и вызывающий обязан сделать полный purge.
+     * The connection is kept only if the host and database are unchanged;
+     * otherwise this returns false and the caller must do a full purge.
      */
     public static function restoreDefaultSchema(): bool
     {
         $connectionName = (string) config('database.layer');
 
         if (! static::isConnected($connectionName)) {
-            return true;   // разрывать нечего
+            return true;   // nothing to drop
         }
 
         if (! array_key_exists($connectionName, static::$pristineSearchPath)) {
-            return true;   // схему никто не подменял
+            return true;   // nobody switched the schema
         }
 
         $pristine = static::$pristineSearchPath[$connectionName];
@@ -214,7 +214,7 @@ class ConnectionHelper
 
         $target = $pristine ?? 'public';
         if (! SchemaName::isValid((string) $target)) {
-            return false;  // нестандартный путь (список схем) — безопаснее разорвать
+            return false;  // a non-standard path (a list of schemas) — safer to drop
         }
 
         $connection['search_path'] = $target;
@@ -229,20 +229,20 @@ class ConnectionHelper
     }
 
     /**
-     * Привести конфиг живого подключения в соответствие с новой схемой.
+     * Bring a live connection's config in line with the new schema.
      *
-     * Пока слой переключался через `purge`, экземпляр подключения создавался
-     * заново — вместе с конфигом. При переключении через `SET search_path`
-     * экземпляр остаётся прежним, а его конфиг помнит прошлую схему. На
-     * запросах это не видно (они идут по search_path), а вот schema builder
-     * Postgres на Laravel 11/12 берёт схему именно из конфига подключения:
-     * `Schema::hasTable()` отвечал про прошлый слой. Наружу это вылезало так,
-     * что `migrate:install` находил таблицу `migrations` предыдущего слоя и не
-     * создавал её для текущего, а следующий за ним `migrate` падал на её
-     * отсутствии (Laravel 13 спрашивает `current_schema()` и не страдал).
+     * While layers were switched by `purge`, the connection instance was built
+     * anew each time, config included. With `SET search_path` the instance stays
+     * and its config still remembers the previous schema. Queries do not show it
+     * — they follow search_path — but the Postgres schema builder on Laravel
+     * 11/12 takes the schema from the connection config: `Schema::hasTable()`
+     * answered about the previous layer. What surfaced was `migrate:install`
+     * finding the previous layer's `migrations` table, skipping creation for the
+     * current one, and the `migrate` that followed failing on the missing table.
+     * Laravel 13 asks `current_schema()` and was never affected.
      *
-     * Публичного сеттера у `Connection` нет ни в одной поддерживаемой версии,
-     * поэтому конфиг правится замыканием, привязанным к экземпляру.
+     * `Connection` has no public setter in any supported version, so the config
+     * is patched through a closure bound to the instance.
      */
     protected static function syncConnectionSchema(ConnectionInterface $connection, string $schema): void
     {
@@ -257,10 +257,10 @@ class ConnectionHelper
     }
 
     /**
-     * Забыть подтверждения существования схем.
+     * Forget the confirmations that schemas exist.
      *
-     * Нужно там, где схема исчезает из-под процесса: удаление слоя, откат
-     * миграций, тесты с пересозданием базы.
+     * Needed wherever a schema disappears from under the process: dropping a
+     * layer, rolling migrations back, tests that recreate the database.
      */
     public static function forgetEnsuredSchemas(?string $schema = null): void
     {

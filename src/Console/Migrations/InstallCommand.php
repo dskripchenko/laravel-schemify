@@ -25,7 +25,7 @@ class InstallCommand extends BaseInstallCommand
         $this->runByLayer(function (&$instance, $database) {
             $connection = DB::connection($database);
             $resolver = new ConnectionResolver([$database => $connection]);
-            // Laravel 11+: database.migrations — массив {table, ...}; ранее — строка.
+            // Laravel 11+: database.migrations is an array {table, ...}; a string before that.
             $migrations = config('database.migrations');
             $table = is_array($migrations) ? ($migrations['table'] ?? 'migrations') : (string) $migrations;
             $repository = new DatabaseMigrationRepository($resolver, $table);

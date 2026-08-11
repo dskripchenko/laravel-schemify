@@ -99,10 +99,10 @@ class SchemifyManager
         $previous = $this->current;
         $this->current = null;
 
-        // Возвращаем исходную схему, не разрывая соединение: purge заставлял
-        // подключаться заново при следующем переключении, и в воркере очереди
-        // это стоило соединения на каждую задачу. Если вернуть путь нельзя —
-        // рвём, как раньше: остаться на чужой схеме недопустимо.
+        // Restore the original schema without dropping the connection: purge
+        // forced a reconnect on the next switch, which in a queue worker cost
+        // one connection per job. If the path cannot be restored, drop it as
+        // before — staying on somebody else's schema is not acceptable.
         if (! ConnectionHelper::restoreDefaultSchema()) {
             DB::purge($this->connectionName());
         }
@@ -191,8 +191,8 @@ class SchemifyManager
                     ->unprepared('DROP SCHEMA IF EXISTS '.SchemaName::quote($layer->schema_name).' CASCADE;');
             });
 
-            // Схемы больше нет — снимаем подтверждение, иначе процесс продолжит
-            // считать её существующей и перестанет её создавать.
+            // The schema is gone — clear the confirmation, or the process keeps
+            // believing it exists and stops creating it.
             ConnectionHelper::forgetEnsuredSchemas($layer->schema_name);
         }
 

@@ -18,11 +18,11 @@ use Illuminate\Database\MigrationServiceProvider as BaseMigrationServiceProvider
 class MigrationServiceProvider extends BaseMigrationServiceProvider
 {
     /**
-     * Наши singleton'ы могут быть перекрыты отложенным (deferred) core
-     * MigrationServiceProvider'ом, когда console kernel резолвит команды —
-     * какой биндинг «победит», зависит от порядка. extend() применяется к
-     * ИТОГОВОМУ биндингу независимо от того, кто его зарегистрировал, и
-     * детерминированно возвращает наши override-команды.
+     * Our singletons can be overridden by the deferred core
+     * MigrationServiceProvider when the console kernel resolves commands —
+     * which binding "wins" depends on ordering. extend() applies to the FINAL
+     * binding regardless of who registered it, and deterministically returns
+     * our overridden commands.
      */
     public function register()
     {
@@ -39,8 +39,8 @@ class MigrationServiceProvider extends BaseMigrationServiceProvider
             StatusCommand::class => fn ($app) => new StatusCommand($app['migrator']),
         ];
 
-        // Современный console kernel резолвит команды по CLASS-абстрактам
-        // Illuminate\…\*Command, легаси-строки command.* остаются для BC.
+        // The modern console kernel resolves commands by the class abstracts
+        // Illuminate\…\*Command; the legacy command.* strings remain for BC.
         $abstracts = [
             MigrateCommand::class => ['command.migrate', \Illuminate\Database\Console\Migrations\MigrateCommand::class],
             FreshCommand::class => ['command.migrate.fresh', \Illuminate\Database\Console\Migrations\FreshCommand::class],

@@ -5,16 +5,16 @@ namespace Dskripchenko\Schemify\Traits;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Опция `--layer` для команд, которые пакет подменяет своими.
+ * The `--layer` option for the commands this package overrides.
  *
- * Объявляется через `configure()`, а не через `getOptions()`, потому что
- * `getOptions()` Laravel вызывает только у команд без `$signature`. Ядро
- * переводит свои команды на сигнатуру постепенно — в 13.21 так уехали
+ * Declared through `configure()` rather than `getOptions()`, because Laravel
+ * only calls `getOptions()` for commands without a `$signature`. The framework
+ * migrates its own commands to signatures gradually — 13.21 did so for
  * `migrate:fresh`, `migrate:install`, `migrate:status`, `migrate:reset`,
- * `db:seed` и `db:wipe`, — и наш override молча переставал существовать:
- * команда резолвилась наша, а опции у неё не было. `configure()` зовётся
- * из конструктора Symfony всегда и от способа объявления параметров у
- * родителя не зависит.
+ * `db:seed` and `db:wipe` — and the override silently stopped existing: the
+ * command still resolved to ours, but the option was gone. `configure()` is
+ * always called from Symfony's constructor and does not depend on how the
+ * parent declares its parameters.
  */
 trait HasLayerOption
 {
@@ -22,9 +22,9 @@ trait HasLayerOption
     {
         parent::configure();
 
-        // Сигнатура родителя (или наша) дописывается уже после configure(),
-        // так что проверка нужна на случай, если опция там всё-таки есть:
-        // повторный addOption() у Symfony — исключение, а не перезапись.
+        // The parent's signature (or ours) is applied after configure() runs,
+        // so this guard covers the case where the option is already there:
+        // a repeated addOption() throws in Symfony rather than overwriting.
         if ($this->getDefinition()->hasOption('layer')) {
             return;
         }
@@ -33,7 +33,7 @@ trait HasLayerOption
             'layer',
             null,
             InputOption::VALUE_OPTIONAL,
-            'Слой, к которому применяется команда.'
+            'The layer the command applies to.'
         ));
     }
 }
