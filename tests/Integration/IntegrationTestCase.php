@@ -31,7 +31,7 @@ abstract class IntegrationTestCase extends TestCase
             $pdo->exec('DROP TABLE IF EXISTS layer_items CASCADE');
             $pdo->exec('DROP TABLE IF EXISTS db_connections CASCADE');
             $pdo->exec('DROP TABLE IF EXISTS public.tenant_probe CASCADE');
-            // Stale-схемы прошлых прогонов.
+            // The stale schemas of previous runs.
             $stale = $pdo->query("select schema_name from information_schema.schemata where schema_name like 'lm\\_%' or schema_name like 'prov\\_%' or schema_name like 'q\\_%' or schema_name = 'paths_layer' or schema_name like 'tenant\\_%' or schema_name like 'workspace\\_%'")->fetchAll(PDO::FETCH_COLUMN);
             foreach ($stale as $schema) {
                 $pdo->exec('DROP SCHEMA IF EXISTS "'.$schema.'" CASCADE');

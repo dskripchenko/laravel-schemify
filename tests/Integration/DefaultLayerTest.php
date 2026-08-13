@@ -11,8 +11,8 @@ class DefaultLayerTest extends IntegrationTestCase
 {
     public function test_plain_migrate_defaults_to_the_central_layer(): void
     {
-        // Без --layer команда должна вести себя как vanilla migrate (central),
-        // а не искать хардкодный слой 'main'.
+        // Without --layer the command must behave like a vanilla migrate
+        // (central) rather than look for a hardcoded 'main' layer.
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
     }
 
@@ -21,7 +21,7 @@ class DefaultLayerTest extends IntegrationTestCase
         config(['schemify.migrations.path' => __DIR__.'/../fixtures/tenant-migrations']);
         Schemify::provision('paths_layer');
 
-        // Прогон по слою не должен пытаться накатить provider-loaded миграции.
+        // A run over a layer must not try to apply the provider-loaded migrations.
         $this->artisan('migrate', ['--layer' => 'paths_layer', '--force' => true])
             ->assertSuccessful();
 

@@ -30,7 +30,7 @@ class ProvisioningTest extends IntegrationTestCase
         $this->assertSame('workspace', $layer->layer);
         $this->assertSame(1, DbConnection::query()->count());
         $this->assertTrue($this->schemaExists('prov_a'));
-        // Провижининг не оставляет слой активным.
+        // The provisioning does not leave the layer active.
         $this->assertNull(Schemify::current());
     }
 

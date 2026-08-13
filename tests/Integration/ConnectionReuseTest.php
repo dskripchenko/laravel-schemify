@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Переключение слоя не должно стоить нового соединения.
+ * Switching a layer must not cost a new connection.
  *
- * Раньше каждое переключение делало purge и подключалось заново — новый TCP и
- * новая аутентификация. В приложении, где слой меняется на каждом запросе, это
- * съедало 12% времени запроса (профилирование printable, 2026-07-30).
+ * Every switch used to purge and connect anew — a new TCP session and a new
+ * authentication. In an application where the layer changes on every request
+ * that ate 12% of the request's time (profiling printable, 2026-07-30).
  */
 class ConnectionReuseTest extends IntegrationTestCase
 {
@@ -43,8 +43,9 @@ class ConnectionReuseTest extends IntegrationTestCase
 
     public function test_switching_schema_actually_changes_search_path(): void
     {
-        // Соединение то же — значит проверка изоляции становится обязательной:
-        // если бы search_path не переключился, клиент читал бы чужую схему.
+        // The connection is the same, which makes the isolation check
+        // mandatory: had the search_path not switched, a client would be reading
+        // someone else's schema.
         $this->artisan('layers:new', ['name' => 'tenant_reuse_c', '--force' => true])->assertSuccessful();
         $this->artisan('layers:new', ['name' => 'tenant_reuse_d', '--force' => true])->assertSuccessful();
 
@@ -66,14 +67,14 @@ class ConnectionReuseTest extends IntegrationTestCase
 
     public function test_schema_introspection_follows_the_current_layer(): void
     {
-        // Запросы ходят по search_path, а schema builder Postgres на Laravel
-        // 11/12 берёт схему из конфига подключения. Пока слой переключался
-        // через purge, конфиг пересоздавался вместе с экземпляром; при
-        // переключении на месте он оставался от прошлого слоя, и
-        // `Schema::hasTable()` отвечал про чужую схему. Наружу это вылезало
-        // так: `migrate:install` видел `migrations` предыдущего слоя, не
-        // создавал таблицу для текущего, и `layers:migrate` падал на втором
-        // слое.
+        // Queries travel by the search_path, while Postgres's schema builder on
+        // Laravel 11/12 takes the schema from the connection's config. While a
+        // layer was switched through a purge, the config was recreated together
+        // with the instance; with an in-place switch it stayed behind from the
+        // previous layer, and `Schema::hasTable()` answered about someone else's
+        // schema. Outwardly that surfaced like this: `migrate:install` saw the
+        // previous layer's `migrations`, did not create the table for the
+        // current one, and `layers:migrate` failed on the second layer.
         $this->artisan('layers:new', ['name' => 'tenant_probe_a', '--force' => true])->assertSuccessful();
         $this->artisan('layers:new', ['name' => 'tenant_probe_b', '--force' => true])->assertSuccessful();
 
@@ -102,8 +103,8 @@ class ConnectionReuseTest extends IntegrationTestCase
         $this->artisan('layers:new', ['name' => 'tenant_reuse_e', '--force' => true])->assertSuccessful();
         $this->artisan('layers:new', ['name' => 'tenant_reuse_f', '--force' => true])->assertSuccessful();
 
-        // Провижининг уже подтвердил существование — считаем только то, что
-        // добавят последующие переключения.
+        // The provisioning has already confirmed existence — we count only what
+        // the subsequent switches add.
         $statements = [];
         DB::listen(function ($query) use (&$statements): void {
             if (stripos($query->sql, 'CREATE SCHEMA') !== false) {
@@ -125,9 +126,9 @@ class ConnectionReuseTest extends IntegrationTestCase
 
     public function test_forget_returns_to_the_default_schema_without_dropping_the_connection(): void
     {
-        // Ради экономии соединения нельзя оставлять путь на чужой схеме:
-        // код, который возьмёт подключение слоя без переключения, обязан
-        // видеть исходную схему, а не данные последнего клиента.
+        // Saving a connection is no reason to leave the path on someone else's
+        // schema: code that takes the layer's connection without switching must
+        // see the original schema rather than the last client's data.
         $this->artisan('layers:new', ['name' => 'tenant_reuse_i', '--force' => true])->assertSuccessful();
 
         $connection = $this->layerConnectionName();
@@ -146,7 +147,7 @@ class ConnectionReuseTest extends IntegrationTestCase
             'forget не должен разрывать соединение',
         );
 
-        // Таблицы клиента больше не видно: путь вернулся к исходному.
+        // The client's table is no longer visible: the path is back to the original.
         $visible = DB::connection($connection)
             ->table('information_schema.tables')
             ->where('table_name', 'leak_probe')
@@ -158,13 +159,14 @@ class ConnectionReuseTest extends IntegrationTestCase
 
     public function test_forgetting_ensured_schema_lets_it_be_created_again(): void
     {
-        // Схему могли удалить из-под процесса — тогда подтверждение обязано
-        // сбрасываться, иначе она больше никогда не будет создана.
+        // The schema may have been dropped from under the process — then the
+        // confirmation must be reset, otherwise it would never be created
+        // again.
         $this->artisan('layers:new', ['name' => 'tenant_reuse_g', '--force' => true])->assertSuccessful();
         $this->artisan('layers:new', ['name' => 'tenant_reuse_h', '--force' => true])->assertSuccessful();
 
-        // Уходим на другой слой: переключение на уже активный выходит раньше,
-        // чем дело доходит до проверки схемы.
+        // We move to a different layer: a switch to the already active one
+        // returns before it ever gets to the schema check.
         Schemify::switchTo('tenant_reuse_h');
         ConnectionHelper::forgetEnsuredSchemas('tenant_reuse_g');
 

@@ -27,7 +27,7 @@ class QueuePropagationTest extends IntegrationTestCase
         RecordLayerJob::dispatch();
 
         $this->assertSame('q_layer', RecordLayerJob::$seenLayer);
-        // sync-драйвер: контекст диспетчера восстановлен после инлайн-выполнения.
+        // The sync driver: the dispatcher's context is restored after the inline run.
         $this->assertSame('q_layer', Schemify::current());
     }
 
