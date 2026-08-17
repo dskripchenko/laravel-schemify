@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.4.4] — 2026-08-17
+
+### Changed
+- **The text of one exception is now English.** `Не установлена реализация
+  {$abstract}` became `No implementation bound for {$abstract}` — the message a
+  host sees when a contract of the package has no binding. Nothing else about
+  the behaviour changed; anyone matching on that string will have to update the
+  match, which is why this is written down rather than filed under "comments".
+- The code's comments are in English throughout.
+
 ## [3.4.3] — 2026-08-10
 
 ### Fixed
