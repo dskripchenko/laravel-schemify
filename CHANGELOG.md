@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.5] — 2026-10-25
+
+### Changed
+- **laravel-api 6 is supported.** The requirement is now
+  `dskripchenko/laravel-api` `^5.0 || ^6.0`; 6.0 changed only the
+  documentation page, nothing this package builds on.
+
 ## [3.4.4] — 2026-08-17
 
 ### Changed
