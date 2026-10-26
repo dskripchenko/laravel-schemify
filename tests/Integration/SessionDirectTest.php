@@ -34,4 +34,22 @@ class SessionDirectTest extends IntegrationTestCase
         $this->assertSame(0, $count);
         $this->assertSame(static::dbPort(), (string) DB::connection((string) config('database.layer'))->getConfig('port'));
     }
+
+    public function test_a_session_path_carries_the_appended_schemas_and_returns_to_the_default(): void
+    {
+        config(['schemify.search_path.append' => ['public']]);
+        $this->artisan('layers:new', ['name' => 'tenant_sd_b', '--force' => true])->assertSuccessful();
+        $layer = (string) config('database.layer');
+
+        $path = Schemify::use('tenant_sd_b', fn () => DB::connection($layer)->selectOne('show search_path')->search_path);
+        $this->assertSame('tenant_sd_b, public', str_replace('"', '', $path));
+
+        // Switching again on the live connection keeps them too.
+        Schemify::switchTo('tenant_sd_b');
+        $this->assertSame('tenant_sd_b, public', str_replace('"', '', DB::connection($layer)->selectOne('show search_path')->search_path));
+
+        Schemify::forget();
+        $default = DB::connection($layer)->selectOne('show search_path')->search_path;
+        $this->assertStringNotContainsString('tenant_sd_b', $default);
+    }
 }

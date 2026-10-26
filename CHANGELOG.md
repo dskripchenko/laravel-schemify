@@ -13,7 +13,12 @@
   pooler via `direct`. `direct` applies to every session-path layer connection,
   so workers of a host that pools only its web role (scope switched to
   `session` at runtime) also bypass the pooler although the registry row
-  points at it. An integration test runs against a real PgBouncer
+  points at it.
+- A session path (migrations, workers) now carries `search_path.append` too —
+  until now only the transaction scope did, and a worker could not reach a
+  type living in `extensions` (pgvector). Leaving a layer on a connection
+  whose template names no path returns to the database default
+  (`SET search_path TO DEFAULT`) instead of `public`. An integration test runs against a real PgBouncer
   (`SCHEMIFY_TEST_POOLER_PORT`); the session scope fails the same test.
 - `Schemify::transaction($layer, $callback)` — the unit of work for that scope.
 - With queue propagation on and the transaction scope, a job of a layer runs

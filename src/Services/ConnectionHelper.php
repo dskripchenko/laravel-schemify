@@ -113,7 +113,7 @@ class ConnectionHelper
         if ($schema !== null && static::onlySchemaChanged($options) && static::isConnected($connectionName)) {
             static::prepareConnection($options);
             $connection = DB::connection($connectionName);
-            $connection->unprepared('SET search_path TO '.SchemaName::quote((string) $schema).';');
+            $connection->unprepared('SET search_path TO '.TransactionScope::pathFor((string) $schema).';');
             static::syncConnectionSchema($connection, (string) $schema);
 
             return $connector
@@ -124,6 +124,12 @@ class ConnectionHelper
         static::prepareConnection($options);
         DB::purge($connectionName);
         $connection = DB::connection($connectionName);
+        // The connector set the layer's schema alone; the schemas every layer
+        // needs after its own (`search_path.append`) come with it, as in the
+        // transaction scope.
+        if ($schema !== null && $schema !== '' && (array) config('schemify.search_path.append', []) !== []) {
+            $connection->unprepared('SET search_path TO '.TransactionScope::pathFor((string) $schema).';');
+        }
 
         if ($connector) {
             return $connector->getPreparedConnection($connection, $schema);
@@ -280,7 +286,18 @@ class ConnectionHelper
         $pristine = static::$pristineSearchPath[$connectionName];
         $connection = config("database.connections.{$connectionName}", []);
 
-        $target = $pristine ?? 'public';
+        // No path in the template: back to the database's own default
+        // (`ALTER DATABASE … SET search_path`), not to a guess.
+        if ($pristine === null) {
+            unset($connection['search_path'], $connection['schema']);
+            config(["database.connections.{$connectionName}" => $connection]);
+            $live = DB::connection($connectionName);
+            $live->unprepared('SET search_path TO DEFAULT;');
+
+            return true;
+        }
+
+        $target = $pristine;
         if (! SchemaName::isValid((string) $target)) {
             return false;  // a non-standard path (a list of schemas) — safer to drop
         }
