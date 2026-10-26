@@ -5,6 +5,7 @@ namespace Dskripchenko\Schemify\Services;
 use Closure;
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Support\SchemaName;
+use Dskripchenko\Schemify\Support\TransactionScope;
 use Illuminate\Database\Connection;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Arr;
@@ -48,6 +49,12 @@ class ConnectionHelper
             $newConnection['search_path'] = $options['schema'];
         }
 
+        // In the transaction scope the connector must not set any path on
+        // connect: a session-level SET outlives the transaction behind a pooler.
+        if (TransactionScope::enabled()) {
+            unset($newConnection['search_path'], $newConnection['schema']);
+        }
+
         config(["database.connections.{$connectionName}" => $newConnection]);
     }
 
@@ -73,6 +80,17 @@ class ConnectionHelper
     public static function reconnect($options = [], ?ConnectorInterface $connector = null)
     {
         $connectionName = config('database.layer');
+
+        if (TransactionScope::enabled()) {
+            return static::reconnectTransactionScoped($options, $connector);
+        }
+
+        // A session run under the transaction scope goes past the pooler: the
+        // direct options must take part in the reconnect decision, or the
+        // session SET below would land on a pooled server connection.
+        if (TransactionScope::inSessionOverride()) {
+            $options = array_merge($options, (array) config('schemify.search_path.direct', []));
+        }
 
         if (! static::needToReconnect($options)) {
             return DB::connection($connectionName);
@@ -111,6 +129,43 @@ class ConnectionHelper
         }
 
         return static::getPreparedConnection($connection, $schema);
+    }
+
+    /**
+     * The transaction scope: the connection is reused unless something other
+     * than the schema changed, and the schema is only recorded — it reaches
+     * the server with SET LOCAL at the start of each transaction.
+     *
+     * @param  array  $options
+     * @return Connection|ConnectionInterface
+     */
+    protected static function reconnectTransactionScoped($options = [], ?ConnectorInterface $connector = null)
+    {
+        $connectionName = (string) config('database.layer');
+        $schema = Arr::get($options, 'schema');
+        unset($options['schema'], $options['search_path']);
+
+        TransactionScope::forget($connectionName);
+
+        if (! static::isConnected($connectionName) || ! static::onlySchemaChanged($options)) {
+            static::prepareConnection($options);
+            DB::purge($connectionName);
+        }
+
+        /** @var Connection $connection */
+        $connection = DB::connection($connectionName);
+
+        if ($schema === null || $schema === '') {
+            return $connection;
+        }
+
+        $prepared = $connector
+            ? $connector->getPreparedConnection($connection, $schema)
+            : static::getPreparedConnection($connection, $schema);
+
+        TransactionScope::activate($connection, (string) $schema);
+
+        return $prepared;
     }
 
     /**
@@ -200,6 +255,18 @@ class ConnectionHelper
     public static function restoreDefaultSchema(): bool
     {
         $connectionName = (string) config('database.layer');
+
+        if (TransactionScope::enabled()) {
+            if (static::isConnected($connectionName)) {
+                /** @var Connection $live */
+                $live = DB::connection($connectionName);
+                TransactionScope::clear($live);
+            } else {
+                TransactionScope::forget($connectionName);
+            }
+
+            return true;
+        }
 
         if (! static::isConnected($connectionName)) {
             return true;   // nothing to drop

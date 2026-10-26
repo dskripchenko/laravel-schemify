@@ -110,6 +110,59 @@ worker switches to that layer before running the job and restores the previous
 state afterwards (safe for the `sync` driver too). A job whose layer no longer
 exists fails loudly — by design.
 
+## Behind a transaction pooler (v3.5)
+
+A switch in the default `session` scope runs `SET search_path`, which lives as
+long as the server connection. Behind PgBouncer in **transaction** mode the
+server connection goes to another client after every transaction — and the
+tenant's path goes with it. Use the transaction scope there:
+
+```php
+// config/schemify.php
+'search_path' => [
+    'scope' => 'transaction',
+    'append' => ['extensions'],          // schemas every layer needs after its own
+    'direct' => ['port' => 5432],        // console runs bypass the pooler
+],
+```
+
+- A switch only records the layer. Every transaction on the layer connection
+  starts with `set_config('search_path', …, true)` — the `SET LOCAL` form —
+  so the path dies with the transaction.
+- A query on a connection with an active layer **outside a transaction** throws
+  `OutsideTransactionException`: it would run with whatever path the pooled
+  server connection has. Make the transaction the unit of work:
+
+  ```php
+  Schemify::transaction('acme', fn () => Invoice::sum('amount'));
+  ```
+
+  In an HTTP application, a middleware that switches the layer and wraps the
+  request in `DB::transaction()` does the same for every request.
+- `migrate`, `db:seed` and `db:wipe` with `--layer` run on a plain session (the
+  migrator reads its table outside transactions), with `direct` merged into the
+  connection options so they go past the pooler. The connection is reset to
+  its pooled template afterwards.
+- The connection template must not set `search_path` / `schema`: in this scope
+  they are removed, because Laravel's connector would issue a session-level
+  `SET` on connect. Give the database itself the default path
+  (`ALTER DATABASE … SET search_path = public, extensions`).
+- PDO's named prepared statements do not survive transaction pooling either:
+  set `Pdo\Pgsql::ATTR_DISABLE_PREPARES` (PHP 8.4+; `PDO::PGSQL_ATTR_DISABLE_PREPARES`
+  before) in the connection's `options`.
+
+### The registry on its own connection
+
+When the layer connection **is** the default connection (the whole request
+works in one tenant), point the registry elsewhere so layer lookups do not
+follow the switched tenant:
+
+```php
+'central_connection' => 'central',
+```
+
+`LayerItem` and `DbConnection` then use that connection.
+
 ## Notes
 
 - `switchTo()` reconfigures a single shared connection (`schemify.connection`).

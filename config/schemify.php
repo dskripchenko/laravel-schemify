@@ -37,6 +37,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Central connection
+    |--------------------------------------------------------------------------
+    | The connection of the layer registry (db_connections, layer_items). Null
+    | means the default connection. Set it when the layer connection IS the
+    | default one, so registry lookups do not follow a switched tenant.
+    */
+    'central_connection' => env('SCHEMIFY_CENTRAL_CONNECTION'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | search_path scope
+    |--------------------------------------------------------------------------
+    | 'session'     — a switch runs SET search_path on the connection (default).
+    | 'transaction' — a switch is applied with SET LOCAL at the start of each
+    |                 transaction, and queries outside a transaction on an
+    |                 active layer are refused. Required behind PgBouncer in
+    |                 transaction mode, where a session SET leaks to other
+    |                 clients. Console runs (migrate/seed --layer) use a
+    |                 session; 'direct' overrides their connection options,
+    |                 e.g. ['port' => 5432] to bypass the pooler.
+    | 'append'      — schemas added after the layer's own, e.g. ['extensions'].
+    */
+    'search_path' => [
+        'scope' => env('SCHEMIFY_SEARCH_PATH_SCOPE', 'session'),
+        'append' => [],
+        'direct' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue propagation
     |--------------------------------------------------------------------------
     | When enabled, jobs dispatched while a layer is active carry that layer in
