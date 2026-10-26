@@ -51,6 +51,12 @@ class PathByLayerTest extends TestCase
             {
                 return $this->getMigrationPath();
             }
+
+            /** @return array<int, string> */
+            public function resolveAll(): array
+            {
+                return $this->getMigrationPaths();
+            }
         };
     }
 
@@ -78,5 +84,43 @@ class PathByLayerTest extends TestCase
     public function test_explicit_realpath_option_is_returned_as_is(): void
     {
         $this->assertSame('/abs/custom', $this->resolver('main', '/abs/custom', true)->resolve());
+    }
+
+    /**
+     * @return array{0: array<int, string>, 1: array<int, string>} central, tenant
+     */
+    private function pathsWith(string $registered): array
+    {
+        config()->set('schemify.central_layer', 'core');
+        config()->set('schemify.migrations.central_path', '/central');
+        config()->set('schemify.migrations.path', '/tenant');
+        config()->set('schemify.migrations.registered', $registered);
+        app('migrator')->path('/vendor/pkg');
+
+        return [$this->resolver('core')->resolveAll(), $this->resolver('acme')->resolveAll()];
+    }
+
+    public function test_package_migrations_stay_central_by_default(): void
+    {
+        [$central, $tenant] = $this->pathsWith('central');
+
+        $this->assertSame(['/vendor/pkg', '/central'], $central);
+        $this->assertSame(['/tenant'], $tenant);
+    }
+
+    public function test_package_migrations_can_go_to_tenants(): void
+    {
+        [$central, $tenant] = $this->pathsWith('tenant');
+
+        $this->assertSame(['/central'], $central);
+        $this->assertSame(['/vendor/pkg', '/tenant'], $tenant);
+    }
+
+    public function test_package_migrations_can_go_everywhere(): void
+    {
+        [$central, $tenant] = $this->pathsWith('both');
+
+        $this->assertSame(['/vendor/pkg', '/central'], $central);
+        $this->assertSame(['/vendor/pkg', '/tenant'], $tenant);
     }
 }

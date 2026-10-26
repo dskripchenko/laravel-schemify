@@ -33,6 +33,9 @@ return [
     'migrations' => [
         'path' => env('SCHEMIFY_TENANT_MIGRATIONS_PATH', database_path('migrations/tenant')),
         'central_path' => database_path('migrations'),
+        // Where package migrations (loadMigrationsFrom) run: 'central',
+        // 'tenant' or 'both'.
+        'registered' => env('SCHEMIFY_REGISTERED_MIGRATIONS', 'central'),
     ],
 
     /*

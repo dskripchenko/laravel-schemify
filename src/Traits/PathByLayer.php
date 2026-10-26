@@ -37,24 +37,30 @@ trait PathByLayer
     }
 
     /**
-     * Central runs keep vanilla behaviour (provider-registered paths from
-     * loadMigrationsFrom + the central path). Tenant runs use ONLY the shared
-     * tenant set — vendor/package migrations (admin tables etc.) must not be
-     * replayed into every layer schema.
+     * Migrations registered by packages (loadMigrationsFrom) go where
+     * `schemify.migrations.registered` says:
+     *  - 'central' (default) — vanilla behaviour on the central layer; tenant
+     *    runs use ONLY the shared tenant set, so admin tables and the like are
+     *    not replayed into every layer schema;
+     *  - 'tenant' — the other way round, for applications that live entirely
+     *    inside a tenant (the panel, its users, its packages);
+     *  - 'both' — every run gets them.
      *
      * @return array<int, string>
      */
     protected function getMigrationPaths()
     {
-        if ($this->isCentralLayer()) {
-            // A copy of Migrations\BaseCommand::getMigrationPaths() without
-            // parent:: — not every host command extends that base class.
-            return array_merge(
-                app('migrator')->paths(),
-                [$this->getMigrationPath()],
-            );
-        }
+        $registered = (string) config('schemify.migrations.registered', 'central');
+        $central = $this->isCentralLayer();
 
-        return [$this->getMigrationPath()];
+        $withPackages = $registered === 'both'
+            || ($registered === 'central' && $central)
+            || ($registered === 'tenant' && ! $central);
+
+        // A copy of Migrations\BaseCommand::getMigrationPaths() without
+        // parent:: — not every host command extends that base class.
+        return $withPackages
+            ? array_merge(app('migrator')->paths(), [$this->getMigrationPath()])
+            : [$this->getMigrationPath()];
     }
 }
