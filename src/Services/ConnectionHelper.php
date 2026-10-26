@@ -85,12 +85,13 @@ class ConnectionHelper
             return static::reconnectTransactionScoped($options, $connector);
         }
 
-        // A session run under the transaction scope goes past the pooler: the
-        // direct options must take part in the reconnect decision, or the
-        // session SET below would land on a pooled server connection.
-        if (TransactionScope::inSessionOverride()) {
-            $options = array_merge($options, (array) config('schemify.search_path.direct', []));
-        }
+        // A session path goes past the pooler: the direct options take part in
+        // the reconnect decision, or the session SET below would land on a
+        // pooled server connection and follow it to another client. That
+        // covers a session run under the transaction scope and a process
+        // whose scope is the session (e.g. queue workers of a host that pools
+        // only its web role).
+        $options = array_merge($options, (array) config('schemify.search_path.direct', []));
 
         if (! static::needToReconnect($options)) {
             return DB::connection($connectionName);

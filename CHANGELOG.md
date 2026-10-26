@@ -10,7 +10,10 @@
   start of each transaction; queries outside a transaction on an active layer
   throw `OutsideTransactionException`. `append` adds schemas after the layer's
   own (e.g. `extensions`). Console runs with `--layer` use a session, past the
-  pooler via `direct`. An integration test runs against a real PgBouncer
+  pooler via `direct`. `direct` applies to every session-path layer connection,
+  so workers of a host that pools only its web role (scope switched to
+  `session` at runtime) also bypass the pooler although the registry row
+  points at it. An integration test runs against a real PgBouncer
   (`SCHEMIFY_TEST_POOLER_PORT`); the session scope fails the same test.
 - `Schemify::transaction($layer, $callback)` — the unit of work for that scope.
 - With queue propagation on and the transaction scope, a job of a layer runs

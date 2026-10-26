@@ -58,8 +58,9 @@ return [
     |                 active layer are refused. Required behind PgBouncer in
     |                 transaction mode, where a session SET leaks to other
     |                 clients. Console runs (migrate/seed --layer) use a
-    |                 session; 'direct' overrides their connection options,
-    |                 e.g. ['port' => 5432] to bypass the pooler.
+    |                 session; 'direct' overrides the connection options of
+    |                 every session-path layer connection, e.g.
+    |                 ['port' => 5432] to bypass the pooler.
     | 'append'      — schemas added after the layer's own, e.g. ['extensions'].
     */
     'search_path' => [

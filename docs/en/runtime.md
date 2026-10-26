@@ -143,6 +143,12 @@ tenant's path goes with it. Use the transaction scope there:
   migrator reads its table outside transactions), with `direct` merged into the
   connection options so they go past the pooler. The connection is reset to
   its pooled template afterwards.
+- `direct` applies to **every** session-path connection of a layer, not only
+  to those runs. A host that pools only its web role and sets
+  `scope => 'session'` at runtime for workers and the scheduler gets their
+  layer connections past the pooler too, even though the registry row points
+  at the pooler. Without it, a worker's session `SET search_path` would land
+  on a pooled server connection and reach another client.
 - The connection template must not set `search_path` / `schema`: in this scope
   they are removed, because Laravel's connector would issue a session-level
   `SET` on connect. Give the database itself the default path
