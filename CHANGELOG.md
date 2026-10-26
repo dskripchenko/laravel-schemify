@@ -13,6 +13,8 @@
   pooler via `direct`. An integration test runs against a real PgBouncer
   (`SCHEMIFY_TEST_POOLER_PORT`); the session scope fails the same test.
 - `Schemify::transaction($layer, $callback)` — the unit of work for that scope.
+- With queue propagation on and the transaction scope, a job of a layer runs
+  inside one transaction: committed when processed, rolled back when it throws.
 - `schemify.migrations.registered` — where package migrations
   (`loadMigrationsFrom`) run: `central` (default, as before), `tenant` (for
   applications that live entirely inside a tenant) or `both`.
