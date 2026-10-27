@@ -91,6 +91,18 @@ class SchemifyManager
     }
 
     /**
+     * Run a callback inside a transaction on the layer connection with the
+     * given layer active. With the transaction-scoped search_path this is the
+     * unit of work: the path is set by the transaction's first statement.
+     *
+     * @return mixed the callback's return value
+     */
+    public function transaction(string $name, Closure $callback, int $attempts = 1)
+    {
+        return $this->use($name, fn () => DB::connection($this->connectionName())->transaction($callback, $attempts));
+    }
+
+    /**
      * Drop the active layer and purge the layer connection so the next
      * resolution rebuilds from the base template.
      */

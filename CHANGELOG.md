@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased] — 3.5.0
+
+### Added
+- **A transaction-scoped search_path** (`schemify.search_path.scope =
+  'transaction'`) for PgBouncer in transaction mode, where a session-level
+  `SET search_path` leaks to the next client of the server connection — one
+  tenant reading another's schema. The layer is applied with `SET LOCAL` at the
+  start of each transaction; queries outside a transaction on an active layer
+  throw `OutsideTransactionException`. `append` adds schemas after the layer's
+  own (e.g. `extensions`). Console runs with `--layer` use a session, past the
+  pooler via `direct`. `direct` applies to every session-path layer connection,
+  so workers of a host that pools only its web role (scope switched to
+  `session` at runtime) also bypass the pooler although the registry row
+  points at it.
+- A session path (migrations, workers) now carries `search_path.append` too —
+  until now only the transaction scope did, and a worker could not reach a
+  type living in `extensions` (pgvector). Leaving a layer on a connection
+  whose template names no path returns to the database default
+  (`SET search_path TO DEFAULT`) instead of `public`. An integration test runs against a real PgBouncer
+  (`SCHEMIFY_TEST_POOLER_PORT`); the session scope fails the same test.
+- `Schemify::transaction($layer, $callback)` — the unit of work for that scope.
+- With queue propagation on and the transaction scope, a job of a layer runs
+  inside one transaction: committed when processed, rolled back when it throws.
+- `schemify.migrations.registered` — where package migrations
+  (`loadMigrationsFrom`) run: `central` (default, as before), `tenant` (for
+  applications that live entirely inside a tenant) or `both`.
+- `schemify.central_connection` — the connection of `LayerItem` and
+  `DbConnection`, for hosts whose layer connection is the default one.
+
 ## [3.4.5] — 2026-10-25
 
 ### Changed

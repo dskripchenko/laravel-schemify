@@ -2,9 +2,11 @@
 
 namespace Dskripchenko\Schemify\Queue;
 
+use Dskripchenko\Schemify\Support\TransactionScope;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 
@@ -21,6 +23,10 @@ use Illuminate\Support\Facades\Queue;
  *
  * A job whose layer no longer exists fails loudly (switchTo throws) — that is
  * intentional: silently running it on the wrong connection would be worse.
+ *
+ * With the transaction-scoped search_path a job of a layer runs inside one
+ * transaction on the layer connection: committed when the job is processed,
+ * rolled back when it throws.
  */
 final class LayerPropagator
 {
@@ -28,6 +34,9 @@ final class LayerPropagator
 
     /** @var list<string|null> layers active in the worker before each nested job */
     private static array $restoreStack = [];
+
+    /** @var list<bool> whether each nested job opened a transaction */
+    private static array $transactionStack = [];
 
     public static function register(): void
     {
@@ -49,13 +58,32 @@ final class LayerPropagator
 
             $layer = $event->job->payload()[self::PAYLOAD_KEY] ?? null;
 
+            $began = false;
+
             if (is_string($layer) && $layer !== '') {
                 $manager->switchTo($layer);
+
+                if (TransactionScope::enabled()) {
+                    DB::connection($manager->connectionName())->beginTransaction();
+                    $began = true;
+                }
             } elseif ($manager->current() !== null) {
                 $manager->forget();
             }
+
+            self::$transactionStack[] = $began;
         });
 
+        Event::listen(JobProcessed::class, static function (): void {
+            self::finishTransaction(commit: true);
+        });
+
+        Event::listen(JobExceptionOccurred::class, static function (): void {
+            self::finishTransaction(commit: false);
+        });
+
+        // Registered after the transaction listeners, so the transaction ends
+        // before the layer is restored.
         // JobExceptionOccurred fires on every failed attempt (before JobFailed),
         // so together with JobProcessed each push gets exactly one pop.
         Event::listen([JobProcessed::class, JobExceptionOccurred::class], static function (): void {
@@ -72,5 +100,20 @@ final class LayerPropagator
                 $manager->forget();
             }
         });
+    }
+
+    private static function finishTransaction(bool $commit): void
+    {
+        if (self::$transactionStack === [] || ! array_pop(self::$transactionStack)) {
+            return;
+        }
+
+        $connection = DB::connection(app('schemify')->connectionName());
+
+        if ($connection->transactionLevel() === 0) {
+            return;
+        }
+
+        $commit ? $connection->commit() : $connection->rollBack();
     }
 }

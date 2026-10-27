@@ -19,6 +19,16 @@ class DbConnection extends Model
 {
     use SoftDeletes;
 
+    /**
+     * The registry lives on the central connection when one is configured:
+     * with the default connection switched to a tenant, the layer lookups
+     * must not follow it.
+     */
+    public function getConnectionName()
+    {
+        return config('schemify.central_connection') ?: parent::getConnectionName();
+    }
+
     protected $fillable = [
         'driver',
         'host',

@@ -3,6 +3,7 @@
 namespace Dskripchenko\Schemify\Traits;
 
 use Dskripchenko\Schemify\Facades\LayerItemConnector;
+use Dskripchenko\Schemify\Support\TransactionScope;
 
 /**
  * Trait RunByLayer
@@ -19,6 +20,14 @@ trait RunByLayer
     use ResolvesLayerOption;
 
     public function runByLayer(\Closure $callback)
+    {
+        // Migrations and seeders query outside transactions; with the
+        // transaction-scoped path they run on a plain session, optionally
+        // past the pooler (schemify.search_path.direct).
+        TransactionScope::withSession(fn () => $this->runByLayerInSession($callback));
+    }
+
+    private function runByLayerInSession(\Closure $callback): void
     {
         $connectionName = config('database.layer');
         $layer = $this->layerOption();

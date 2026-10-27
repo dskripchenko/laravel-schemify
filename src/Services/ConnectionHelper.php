@@ -5,6 +5,7 @@ namespace Dskripchenko\Schemify\Services;
 use Closure;
 use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Support\SchemaName;
+use Dskripchenko\Schemify\Support\TransactionScope;
 use Illuminate\Database\Connection;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Arr;
@@ -48,6 +49,12 @@ class ConnectionHelper
             $newConnection['search_path'] = $options['schema'];
         }
 
+        // In the transaction scope the connector must not set any path on
+        // connect: a session-level SET outlives the transaction behind a pooler.
+        if (TransactionScope::enabled()) {
+            unset($newConnection['search_path'], $newConnection['schema']);
+        }
+
         config(["database.connections.{$connectionName}" => $newConnection]);
     }
 
@@ -74,6 +81,18 @@ class ConnectionHelper
     {
         $connectionName = config('database.layer');
 
+        if (TransactionScope::enabled()) {
+            return static::reconnectTransactionScoped($options, $connector);
+        }
+
+        // A session path goes past the pooler: the direct options take part in
+        // the reconnect decision, or the session SET below would land on a
+        // pooled server connection and follow it to another client. That
+        // covers a session run under the transaction scope and a process
+        // whose scope is the session (e.g. queue workers of a host that pools
+        // only its web role).
+        $options = array_merge($options, (array) config('schemify.search_path.direct', []));
+
         if (! static::needToReconnect($options)) {
             return DB::connection($connectionName);
         }
@@ -94,7 +113,7 @@ class ConnectionHelper
         if ($schema !== null && static::onlySchemaChanged($options) && static::isConnected($connectionName)) {
             static::prepareConnection($options);
             $connection = DB::connection($connectionName);
-            $connection->unprepared('SET search_path TO '.SchemaName::quote((string) $schema).';');
+            $connection->unprepared('SET search_path TO '.TransactionScope::pathFor((string) $schema).';');
             static::syncConnectionSchema($connection, (string) $schema);
 
             return $connector
@@ -105,12 +124,55 @@ class ConnectionHelper
         static::prepareConnection($options);
         DB::purge($connectionName);
         $connection = DB::connection($connectionName);
+        // The connector set the layer's schema alone; the schemas every layer
+        // needs after its own (`search_path.append`) come with it, as in the
+        // transaction scope.
+        if ($schema !== null && $schema !== '' && (array) config('schemify.search_path.append', []) !== []) {
+            $connection->unprepared('SET search_path TO '.TransactionScope::pathFor((string) $schema).';');
+        }
 
         if ($connector) {
             return $connector->getPreparedConnection($connection, $schema);
         }
 
         return static::getPreparedConnection($connection, $schema);
+    }
+
+    /**
+     * The transaction scope: the connection is reused unless something other
+     * than the schema changed, and the schema is only recorded — it reaches
+     * the server with SET LOCAL at the start of each transaction.
+     *
+     * @param  array  $options
+     * @return Connection|ConnectionInterface
+     */
+    protected static function reconnectTransactionScoped($options = [], ?ConnectorInterface $connector = null)
+    {
+        $connectionName = (string) config('database.layer');
+        $schema = Arr::get($options, 'schema');
+        unset($options['schema'], $options['search_path']);
+
+        TransactionScope::forget($connectionName);
+
+        if (! static::isConnected($connectionName) || ! static::onlySchemaChanged($options)) {
+            static::prepareConnection($options);
+            DB::purge($connectionName);
+        }
+
+        /** @var Connection $connection */
+        $connection = DB::connection($connectionName);
+
+        if ($schema === null || $schema === '') {
+            return $connection;
+        }
+
+        $prepared = $connector
+            ? $connector->getPreparedConnection($connection, $schema)
+            : static::getPreparedConnection($connection, $schema);
+
+        TransactionScope::activate($connection, (string) $schema);
+
+        return $prepared;
     }
 
     /**
@@ -201,6 +263,18 @@ class ConnectionHelper
     {
         $connectionName = (string) config('database.layer');
 
+        if (TransactionScope::enabled()) {
+            if (static::isConnected($connectionName)) {
+                /** @var Connection $live */
+                $live = DB::connection($connectionName);
+                TransactionScope::clear($live);
+            } else {
+                TransactionScope::forget($connectionName);
+            }
+
+            return true;
+        }
+
         if (! static::isConnected($connectionName)) {
             return true;   // nothing to drop
         }
@@ -212,7 +286,18 @@ class ConnectionHelper
         $pristine = static::$pristineSearchPath[$connectionName];
         $connection = config("database.connections.{$connectionName}", []);
 
-        $target = $pristine ?? 'public';
+        // No path in the template: back to the database's own default
+        // (`ALTER DATABASE … SET search_path`), not to a guess.
+        if ($pristine === null) {
+            unset($connection['search_path'], $connection['schema']);
+            config(["database.connections.{$connectionName}" => $connection]);
+            $live = DB::connection($connectionName);
+            $live->unprepared('SET search_path TO DEFAULT;');
+
+            return true;
+        }
+
+        $target = $pristine;
         if (! SchemaName::isValid((string) $target)) {
             return false;  // a non-standard path (a list of schemas) — safer to drop
         }

@@ -13,6 +13,9 @@ use Dskripchenko\Schemify\Interfaces\ConnectorInterface;
 use Dskripchenko\Schemify\Models\LayerItem;
 use Dskripchenko\Schemify\Queue\LayerPropagator;
 use Dskripchenko\Schemify\Support\SchemifyManager;
+use Dskripchenko\Schemify\Support\TransactionScope;
+use Illuminate\Database\Events\TransactionBeginning;
+use Illuminate\Support\Facades\Event;
 
 /**
  * Class SchemifyServiceProvider
@@ -34,6 +37,8 @@ class SchemifyServiceProvider extends BaseServiceProvider
         if (config('schemify.queue.propagate')) {
             LayerPropagator::register();
         }
+
+        Event::listen(TransactionBeginning::class, [TransactionScope::class, 'onTransactionBeginning']);
 
         $this->commands([
             PackagePostInstall::class,
