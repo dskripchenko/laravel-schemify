@@ -1,7 +1,6 @@
 # Changelog
 
-## [Unreleased] — 3.5.0
-
+## [3.5.0] — 2026-10-27
 ### Added
 - **A transaction-scoped search_path** (`schemify.search_path.scope =
   'transaction'`) for PgBouncer in transaction mode, where a session-level
